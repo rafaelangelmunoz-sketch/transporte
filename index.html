@@ -7,13 +7,16 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Rafael Muñoz" />
-  <meta name="description" content="Rafael Muñoz — Transporte Privado en Maracaibo. Disponibilidad en vivo, sector actual y datos de pago." />
+  <meta name="description" content="Rafael Muñoz — Transporte Privado en Maracaibo. Disponibilidad en vivo, cotizador por km, sector actual y datos de pago." />
   <title>Rafael Muñoz — Transporte Privado</title>
 
   <!-- Tipografía Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Leaflet CSS para Mapa Interactivo Integrado -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -55,8 +58,9 @@
     };
   </script>
 
-  <!-- Generador ligero de QR en cliente (con respaldo SVG/API si falla la red) -->
+  <!-- Generador ligero de QR y Leaflet JS -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 
   <style>
     html, body {
@@ -90,6 +94,16 @@
       display: block;
       margin: 0 auto;
       border-radius: 8px;
+    }
+
+    #leaflet-map {
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+    }
+
+    .leaflet-control-attribution {
+      font-size: 9px !important;
     }
   </style>
 </head>
@@ -173,7 +187,6 @@
         <!-- Banner de Disponibilidad y Sector en Vivo (Zafiro Profundo) -->
         <section id="status-card" class="bg-zafiro-main border border-estado-activo/45 rounded-2xl p-4 transition-all duration-300">
           <div class="flex items-start gap-3">
-            <!-- Punto indicador pulsante -->
             <div class="relative flex items-center justify-center w-4 h-4 mt-1 shrink-0">
               <span id="status-pulse" class="pulse-beacon absolute inline-flex h-full w-full rounded-full bg-estado-activo"></span>
               <span id="status-dot" class="relative inline-flex rounded-full h-3 w-3 bg-estado-activo"></span>
@@ -204,14 +217,14 @@
           </div>
         </section>
 
-        <!-- Bloque de Solicitud por WhatsApp con Buscador de Lugares (Zafiro Profundo + 10% Naranja Brasa) -->
+        <!-- Bloque de Solicitud + Mapa Interactivo + Cotizador km / USD / Bs -->
         <section class="bg-zafiro-main border border-zafiro-card rounded-2xl p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
-            <h2 class="text-sm font-extrabold text-zafiro-text tracking-tight">Solicitar Servicio</h2>
+            <h2 class="text-sm font-extrabold text-zafiro-text tracking-tight">Solicitar y Cotizar Servicio</h2>
             <span id="client-whatsapp-display" class="text-xs font-semibold text-zafiro-muted">0414-655-3914</span>
           </div>
 
-          <!-- Campo DESDE (Origen) con Buscador Integrado -->
+          <!-- Campo DESDE (Origen) -->
           <div class="space-y-1.5 relative">
             <div class="flex items-center justify-between gap-2">
               <label for="input-origin" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted flex items-center gap-1.5">
@@ -220,14 +233,16 @@
                   Mapa ✓
                 </span>
               </label>
-              <a
-                href="https://www.google.com/maps"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-[11px] font-bold text-brasa hover:underline flex items-center gap-1"
+              <button
+                id="btn-pick-origin-map"
+                type="button"
+                class="text-[11px] font-bold text-brasa hover:underline flex items-center gap-1 cursor-pointer"
               >
-                Abrir Maps ↗
-              </a>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                </svg>
+                Marcar en mapa
+              </button>
             </div>
 
             <div class="relative">
@@ -278,7 +293,7 @@
             </div>
           </div>
 
-          <!-- Campo HASTA (Destino) con Buscador Integrado -->
+          <!-- Campo HASTA (Destino) -->
           <div class="space-y-1.5 pt-1 relative">
             <div class="flex items-center justify-between gap-2">
               <label for="input-destination" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted flex items-center gap-1.5">
@@ -287,14 +302,16 @@
                   Mapa ✓
                 </span>
               </label>
-              <a
-                href="https://www.google.com/maps"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="text-[11px] font-bold text-brasa hover:underline flex items-center gap-1"
+              <button
+                id="btn-pick-dest-map"
+                type="button"
+                class="text-[11px] font-bold text-brasa hover:underline flex items-center gap-1 cursor-pointer"
               >
-                Abrir Maps ↗
-              </a>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                </svg>
+                Marcar en mapa
+              </button>
             </div>
 
             <div class="relative">
@@ -321,6 +338,36 @@
               style="display: none;"
               class="absolute left-0 right-0 top-[72px] z-30 bg-perla-bg text-perla-ink border border-perla-box rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-perla-box"
             ></div>
+          </div>
+
+          <!-- Tarjeta de Cotización Estimada (Distancia, USD y Bs. BCV) -->
+          <div id="fare-estimate-box" style="display: none;" class="bg-zafiro-dark border border-brasa/60 rounded-2xl p-3.5 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 text-brasa" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
+                </svg>
+                Estimación del Viaje
+              </span>
+              <span id="fare-distance-badge" class="text-xs font-extrabold text-zafiro-text bg-zafiro-main px-2.5 py-0.5 rounded-lg border border-zafiro-card">
+                0.0 km
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 pt-0.5">
+              <div class="bg-zafiro-main/80 border border-zafiro-card rounded-xl px-3 py-2">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-zafiro-muted">Precio USD</p>
+                <p id="fare-usd-value" class="text-lg font-extrabold text-brasa leading-tight mt-0.5">$0.00</p>
+              </div>
+              <div class="bg-zafiro-main/80 border border-zafiro-card rounded-xl px-3 py-2">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-zafiro-muted">Precio Bs. (BCV)</p>
+                <p id="fare-bs-value" class="text-lg font-extrabold text-zafiro-text leading-tight mt-0.5">Bs. 0,00</p>
+              </div>
+            </div>
+
+            <p id="fare-rate-caption" class="text-[10px] text-zafiro-muted text-center">
+              $0.50/km (0–3 km) · $0.40/km (&gt;3 km) · BCV: Bs. 1.000,00/$
+            </p>
           </div>
 
           <!-- Aviso cuando el conductor está ocupado -->
@@ -448,9 +495,7 @@
           </div>
 
           <!-- Panel 2: Binance Pay -->
-          <div id="panel-binance" style="display: none;" class="space-y-2">
-            <!-- Renderizado dinámicamente -->
-          </div>
+          <div id="panel-binance" style="display: none;" class="space-y-2"></div>
 
           <!-- Panel 3: Efectivo / Zelle -->
           <div id="panel-efectivo" style="display: none;" class="space-y-2.5">
@@ -467,14 +512,13 @@
                 </p>
               </div>
             </div>
-            <!-- Contenedor Zelle si está configurado -->
             <div id="panel-zelle-slot"></div>
           </div>
         </section>
 
         <!-- Nota para guardar en pantalla de inicio -->
         <p class="text-[11px] text-zafiro-muted/80 text-center pt-1">
-          Agrega esta app a tu pantalla de inicio para consultar disponibilidad y pagar en un toque.
+          Agrega esta app a tu pantalla de inicio para cotizar, consultar disponibilidad y pagar en un toque.
         </p>
       </main>
     </div>
@@ -484,7 +528,6 @@
     <!-- VISTA 2: PANTALLA DE PIN (#view-pin)                        -->
     <!-- =========================================================== -->
     <div id="view-pin" style="display: none;" class="w-full min-h-screen sm:min-h-[820px] px-5 py-8">
-      <!-- Botón superior para regresar -->
       <div class="mb-5">
         <button
           id="btn-pin-back-top"
@@ -509,7 +552,6 @@
           <p class="text-xs text-perla-ink/75 mt-1">Ingresa tu PIN de 4 dígitos para administrar</p>
         </div>
 
-        <!-- 4 Puntos Indicadores -->
         <div id="pin-dots-container" class="flex items-center justify-center gap-3 py-1">
           <span class="pin-dot w-4 h-4 rounded-full border-2 border-perla-ink/40 bg-transparent transition-all"></span>
           <span class="pin-dot w-4 h-4 rounded-full border-2 border-perla-ink/40 bg-transparent transition-all"></span>
@@ -521,7 +563,6 @@
           PIN incorrecto. Intenta nuevamente.
         </p>
 
-        <!-- Teclado Numérico Táctil -->
         <div class="grid grid-cols-3 gap-2.5 max-w-[270px] mx-auto">
           <button type="button" data-pin-digit="1" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">1</button>
           <button type="button" data-pin-digit="2" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">2</button>
@@ -583,7 +624,7 @@
 
       <div class="px-5 pt-5 space-y-4">
 
-        <!-- Indicador Discreto de Sincronización Firebase (Solo visible en Admin) -->
+        <!-- Indicador Discreto de Sincronización Firebase -->
         <div id="sync-status-banner" class="rounded-2xl px-4 py-3 border text-xs flex items-center justify-between gap-2 bg-zafiro-main border-zafiro-card text-zafiro-muted">
           <div class="flex items-center gap-2 min-w-0">
             <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-zafiro-muted shrink-0"></span>
@@ -624,6 +665,59 @@
           </p>
         </section>
 
+        <!-- Control Rápido: Tasa BCV y Tarifas Escalonadas por Km -->
+        <section class="bg-zafiro-main border border-zafiro-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-extrabold text-zafiro-text">Tasa BCV y Tarifas</h3>
+            <span id="admin-rates-badge" class="text-[11px] font-bold text-brasa truncate">Bs. 1.000/$ · $0.50 / $0.40</span>
+          </div>
+
+          <div>
+            <label for="quick-bcv-rate" class="block text-[11px] font-semibold text-zafiro-muted mb-1">Tasa BCV (Bs por $1)</label>
+            <input
+              id="quick-bcv-rate"
+              type="number"
+              step="0.01"
+              min="1"
+              value="1000"
+              class="w-full bg-zafiro-dark border border-zafiro-card focus:border-brasa rounded-xl px-3 py-2.5 text-sm font-bold text-zafiro-text outline-none"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div>
+              <label for="quick-price-km" class="block text-[11px] font-semibold text-zafiro-muted mb-1">Primeros 3 km ($/km)</label>
+              <input
+                id="quick-price-km"
+                type="number"
+                step="0.05"
+                min="0.05"
+                value="0.5"
+                class="w-full bg-zafiro-dark border border-zafiro-card focus:border-brasa rounded-xl px-3 py-2.5 text-sm font-bold text-zafiro-text outline-none"
+              />
+            </div>
+            <div>
+              <label for="quick-price-km-extra" class="block text-[11px] font-semibold text-zafiro-muted mb-1">Km extra &gt;3 km ($/km)</label>
+              <input
+                id="quick-price-km-extra"
+                type="number"
+                step="0.05"
+                min="0.05"
+                value="0.4"
+                class="w-full bg-zafiro-dark border border-zafiro-card focus:border-brasa rounded-xl px-3 py-2.5 text-sm font-bold text-zafiro-text outline-none"
+              />
+            </div>
+          </div>
+
+          <button
+            id="btn-save-rates"
+            type="button"
+            class="w-full py-2.5 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text text-xs font-extrabold tracking-wide transition-colors cursor-pointer"
+          >
+            Actualizar Tasa BCV y Tarifas
+          </button>
+        </section>
+
         <!-- Selector de 12 Sectores de Maracaibo (30% Blanco Perla #EAE6E1) -->
         <section class="bg-perla-bg text-perla-ink border border-perla-box rounded-2xl p-4 space-y-3.5 shadow-md">
           <div class="flex items-center justify-between gap-2">
@@ -633,7 +727,6 @@
             </span>
           </div>
 
-          <!-- Botón Detectar Sector por GPS (Nominatim, solo guarda el nombre del barrio/sector) -->
           <button
             id="btn-detect-sector"
             type="button"
@@ -654,12 +747,8 @@
             GPS automático activo mientras estés Disponible (solo guarda el nombre del sector).
           </p>
 
-          <!-- Cuadrícula de 12 Sectores Rápidos -->
-          <div id="sector-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            <!-- Generado dinámicamente por JS -->
-          </div>
+          <div id="sector-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2"></div>
 
-          <!-- Sector personalizado -->
           <div class="flex gap-2 pt-1">
             <input
               id="input-custom-sector"
@@ -696,7 +785,6 @@
 
           <div id="settings-body" style="display: none;" class="px-4 pb-4 pt-1 border-t border-zafiro-card">
             <form id="settings-form" class="space-y-4 pt-3">
-              <!-- Perfil y Vehículo -->
               <div class="space-y-2.5">
                 <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Perfil y Contacto</p>
                 <div>
@@ -719,7 +807,6 @@
                 </div>
               </div>
 
-              <!-- Pago Móvil -->
               <div class="space-y-2.5 pt-3 border-t border-zafiro-card">
                 <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Pago Móvil</p>
                 <div>
@@ -738,7 +825,6 @@
                 </div>
               </div>
 
-              <!-- Binance Pay y Zelle -->
               <div class="space-y-2.5 pt-3 border-t border-zafiro-card">
                 <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Pagos Digitales (Opcional)</p>
                 <div>
@@ -751,7 +837,6 @@
                 </div>
               </div>
 
-              <!-- Seguridad -->
               <div class="space-y-2.5 pt-3 border-t border-zafiro-card">
                 <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Seguridad</p>
                 <div>
@@ -760,7 +845,6 @@
                 </div>
               </div>
 
-              <!-- Botón Guardar Cambios (Naranja Brasa) -->
               <button
                 type="submit"
                 class="w-full py-3.5 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text font-extrabold text-sm shadow-md shadow-brasa/25 active:scale-[0.99] transition-all cursor-pointer"
@@ -780,6 +864,67 @@
           ← Volver a Vista Cliente
         </button>
 
+      </div>
+    </div>
+
+
+    <!-- =========================================================== -->
+    <!-- MODAL: MAPA INTERACTIVO PARA MARCAR DESDE / HASTA           -->
+    <!-- =========================================================== -->
+    <div id="map-picker-modal" style="display: none;" class="fixed inset-0 z-50 bg-zafiro-dark/90 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5">
+      <div class="bg-perla-bg text-perla-ink border border-perla-box rounded-3xl w-full max-w-[420px] overflow-hidden shadow-2xl flex flex-col">
+        <!-- Cabecera del Mapa -->
+        <div class="px-4 py-3.5 bg-zafiro-main text-zafiro-text flex items-center justify-between gap-2">
+          <div>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-zafiro-muted">Seleccionar en Mapa</p>
+            <h3 id="map-modal-title" class="text-sm font-extrabold text-zafiro-text">Marca tu punto de Origen</h3>
+          </div>
+          <button
+            id="btn-close-map-modal"
+            type="button"
+            aria-label="Cerrar mapa"
+            class="w-8 h-8 rounded-full bg-zafiro-dark hover:bg-zafiro-card flex items-center justify-center text-zafiro-text cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+          </button>
+        </div>
+
+        <!-- Contenedor del Mapa Leaflet -->
+        <div class="relative w-full h-[330px] bg-perla-box">
+          <div id="leaflet-map"></div>
+          <button
+            id="btn-map-center-gps"
+            type="button"
+            title="Ir a mi ubicación actual"
+            class="absolute bottom-3 right-3 z-[400] px-3 py-2 rounded-xl bg-zafiro-dark hover:bg-zafiro-main text-zafiro-text text-xs font-bold shadow-lg flex items-center gap-1.5 cursor-pointer"
+          >
+            <svg class="w-3.5 h-3.5 text-brasa" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path stroke-linecap="round" d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+            </svg>
+            Mi GPS
+          </button>
+        </div>
+
+        <!-- Pie del Mapa con Dirección y Botón Confirmar -->
+        <div class="p-4 space-y-3 bg-perla-bg">
+          <div class="bg-perla-box/65 border border-perla-box rounded-xl px-3 py-2.5">
+            <p class="text-[10px] font-bold uppercase tracking-wider text-perla-ink/65">Ubicación marcada (toca o arrastra el pin)</p>
+            <p id="map-picked-address" class="text-xs font-extrabold text-perla-ink mt-0.5 truncate">Maracaibo, Zulia</p>
+          </div>
+
+          <div class="flex gap-2">
+            <button
+              id="btn-confirm-map-point"
+              type="button"
+              class="flex-1 py-3 px-4 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text text-xs font-extrabold shadow-md transition-colors cursor-pointer"
+            >
+              Usar esta ubicación
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -808,7 +953,6 @@
           </p>
         </div>
 
-        <!-- Contenedor del QR -->
         <div class="bg-white p-4 rounded-2xl inline-flex flex-col items-center justify-center border border-perla-box shadow-inner min-w-[228px] min-h-[228px]">
           <div id="qr-container"></div>
         </div>
@@ -845,7 +989,7 @@
     <!-- =========================================================== -->
     <div
       id="toast"
-      class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 opacity-0 translate-y-3 transition-all duration-300"
+      class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] opacity-0 translate-y-3 transition-all duration-300"
     >
       <div class="bg-zafiro-main border border-brasa text-zafiro-text px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold whitespace-nowrap">
         <span class="w-2 h-2 rounded-full bg-brasa shrink-0"></span>
@@ -856,7 +1000,7 @@
   </div>
 
   <!-- =========================================================== -->
-  <!-- LÓGICA DE APLICACIÓN + FIREBASE REALTIME DATABASE REST API  -->
+  <!-- LÓGICA DE APLICACIÓN + MAPA + COTIZADOR + FIREBASE REST API -->
   <!-- =========================================================== -->
   <script>
     (function () {
@@ -868,11 +1012,11 @@
       const STORAGE_KEY = 'rm_transporte_v3';
       const FIREBASE_ENDPOINT = 'https://mi-transporte-56598-default-rtdb.firebaseio.com/conductor.json';
       const POLL_INTERVAL_MS = 10000;
-      const DRIVER_GPS_INTERVAL_MS = 180000; // Actualización automática cada 3 min solo si está Activo
+      const DRIVER_GPS_INTERVAL_MS = 180000;
       const MCBO_LAT = 10.6544;
       const MCBO_LON = -71.6406;
+      const BASE_KM_LIMIT = 3;
 
-      // 12 Sectores rápidos de Maracaibo
       const MARACAIBO_SECTORS = [
         'Bella Vista',
         '5 de Julio',
@@ -897,6 +1041,9 @@
         available: true,
         sector: 'Bella Vista',
         updatedAt: Date.now(),
+        bcvRate: 1000,
+        pricePerKm: 0.5,
+        pricePerKmExtra: 0.4,
         pagoMovil: {
           banco: 'Banesco (0134)',
           cedula: 'V-15.465.909',
@@ -912,9 +1059,20 @@
       let appState = loadLocalState();
       let currentView = 'client';
       let pinBuffer = '';
-      let clientGpsLink = null;
-      let selectedOriginPlace = null; // { name, mapsUrl }
-      let selectedDestPlace = null;   // { name, mapsUrl }
+
+      // Coordenadas y datos de origen/destino para cálculo de ruta
+      let clientGpsCoords = null;     // { lat, lng, mapsUrl }
+      let selectedOriginPlace = null; // { name, lat, lng, mapsUrl }
+      let selectedDestPlace = null;   // { name, lat, lng, mapsUrl }
+      let lastFareQuote = null;       // { km, minutes, usd, bs }
+
+      // Estado del modal de mapa Leaflet
+      let leafletMap = null;
+      let leafletMarker = null;
+      let activeMapTarget = 'origin'; // 'origin' | 'dest'
+      let pickedLatLng = { lat: MCBO_LAT, lng: MCBO_LON };
+      let pickedAddressLabel = 'Maracaibo, Zulia';
+
       let toastTimer = null;
       let pollTimer = null;
       let driverGpsTimer = null;
@@ -926,7 +1084,6 @@
       const viewPin = document.getElementById('view-pin');
       const viewAdmin = document.getElementById('view-admin');
 
-      // Vista Cliente
       const headerMonogram = document.getElementById('header-monogram');
       const headerTitle = document.getElementById('header-title');
       const headerSubtitle = document.getElementById('header-subtitle');
@@ -959,6 +1116,12 @@
       const destSearchSpinner = document.getElementById('dest-search-spinner');
       const destSearchIcon = document.getElementById('dest-search-icon');
 
+      const fareEstimateBox = document.getElementById('fare-estimate-box');
+      const fareDistanceBadge = document.getElementById('fare-distance-badge');
+      const fareUsdValue = document.getElementById('fare-usd-value');
+      const fareBsValue = document.getElementById('fare-bs-value');
+      const fareRateCaption = document.getElementById('fare-rate-caption');
+
       const btnClientGps = document.getElementById('btn-client-gps');
       const clientGpsLabel = document.getElementById('client-gps-label');
       const btnClearGps = document.getElementById('btn-clear-gps');
@@ -986,6 +1149,12 @@
       const btnToggleAvailability = document.getElementById('btn-toggle-availability');
       const toggleKnob = document.getElementById('toggle-knob');
       const adminStatusText = document.getElementById('admin-status-text');
+      const adminRatesBadge = document.getElementById('admin-rates-badge');
+      const quickBcvRate = document.getElementById('quick-bcv-rate');
+      const quickPriceKm = document.getElementById('quick-price-km');
+      const quickPriceKmExtra = document.getElementById('quick-price-km-extra');
+      const btnSaveRates = document.getElementById('btn-save-rates');
+
       const adminCurrentSectorBadge = document.getElementById('admin-current-sector-badge');
       const sectorGrid = document.getElementById('sector-grid');
       const inputCustomSector = document.getElementById('input-custom-sector');
@@ -1001,6 +1170,14 @@
       const settingsChevron = document.getElementById('settings-chevron');
       const settingsBody = document.getElementById('settings-body');
       const settingsForm = document.getElementById('settings-form');
+
+      // Modal Mapa
+      const mapPickerModal = document.getElementById('map-picker-modal');
+      const mapModalTitle = document.getElementById('map-modal-title');
+      const mapPickedAddress = document.getElementById('map-picked-address');
+      const btnCloseMapModal = document.getElementById('btn-close-map-modal');
+      const btnMapCenterGps = document.getElementById('btn-map-center-gps');
+      const btnConfirmMapPoint = document.getElementById('btn-confirm-map-point');
 
       // Modal QR y Toast
       const qrModal = document.getElementById('qr-modal');
@@ -1040,7 +1217,7 @@
       }
 
       // -----------------------------------------------------------
-      // 4. ESTADO LOCAL, PROTECCIÓN DE PIN Y UTILIDADES
+      // 4. ESTADO LOCAL, FORMATOS Y UTILIDADES
       // -----------------------------------------------------------
       function mergeState(base, incoming) {
         if (!incoming || typeof incoming !== 'object') return base;
@@ -1059,6 +1236,9 @@
         if (!merged.pin || String(merged.pin).trim() === '1234') {
           merged.pin = '7563';
         }
+        merged.bcvRate = Number(merged.bcvRate) > 0 ? Number(merged.bcvRate) : 1000;
+        merged.pricePerKm = Number(merged.pricePerKm) > 0 ? Number(merged.pricePerKm) : 0.5;
+        merged.pricePerKmExtra = Number(merged.pricePerKmExtra) > 0 ? Number(merged.pricePerKmExtra) : 0.4;
         return merged;
       }
 
@@ -1127,6 +1307,13 @@
         return raw || '0414-655-3914';
       }
 
+      function formatBs(amount) {
+        return Number(amount || 0).toLocaleString('es-VE', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2
+        });
+      }
+
       function extractBankCode(bancoStr) {
         const match = String(bancoStr || '').match(/\b\d{4}\b/);
         return match ? match[0] : String(bancoStr || '').trim();
@@ -1159,11 +1346,252 @@
           .replace(/"/g, '&quot;');
       }
 
+      // Extraer coordenadas si el cliente pega un enlace de Google Maps
+      function parseCoordsFromUrl(text) {
+        const str = String(text || '').trim();
+        const match = str.match(/(-?\d{1,2}\.\d+)[,\s]+(-?\d{1,3}\.\d+)/);
+        if (!match) return null;
+        const lat = parseFloat(match[1]);
+        const lng = parseFloat(match[2]);
+        if (isNaN(lat) || isNaN(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+        return { lat, lng, mapsUrl: `https://maps.google.com/?q=${lat.toFixed(6)},${lng.toFixed(6)}` };
+      }
+
       // -----------------------------------------------------------
-      // 5. BUSCADOR DE LUGARES EN MARACAIBO (PHOTON + NOMINATIM)
+      // 5. CÁLCULO DE DISTANCIA (OSRM + RESPALDO HAVERSINE) Y PRECIO
+      //    Primeros 3 km a $0.50/km · Km adicionales (>3 km) a $0.40/km
+      // -----------------------------------------------------------
+      function haversineKm(lat1, lon1, lat2, lon2) {
+        const toRad = (deg) => (deg * Math.PI) / 180;
+        const R = 6371;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a =
+          Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+          Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+          Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      }
+
+      function getActiveOriginCoords() {
+        if (selectedOriginPlace && selectedOriginPlace.lat != null) {
+          return { lat: Number(selectedOriginPlace.lat), lng: Number(selectedOriginPlace.lng) };
+        }
+        if (clientGpsCoords) {
+          return { lat: Number(clientGpsCoords.lat), lng: Number(clientGpsCoords.lng) };
+        }
+        return null;
+      }
+
+      function getActiveDestCoords() {
+        if (selectedDestPlace && selectedDestPlace.lat != null) {
+          return { lat: Number(selectedDestPlace.lat), lng: Number(selectedDestPlace.lng) };
+        }
+        return null;
+      }
+
+      function calculateTieredUsd(km, rateBase, rateExtra) {
+        if (km <= BASE_KM_LIMIT) {
+          return km * rateBase;
+        }
+        return (BASE_KM_LIMIT * rateBase) + ((km - BASE_KM_LIMIT) * rateExtra);
+      }
+
+      function renderFareValues(km, minutes) {
+        const rateBase = Number(appState.pricePerKm) > 0 ? Number(appState.pricePerKm) : 0.5;
+        const rateExtra = Number(appState.pricePerKmExtra) > 0 ? Number(appState.pricePerKmExtra) : 0.4;
+        const bcvRate = Number(appState.bcvRate) > 0 ? Number(appState.bcvRate) : 1000;
+
+        const usd = calculateTieredUsd(km, rateBase, rateExtra);
+        const bs = usd * bcvRate;
+
+        lastFareQuote = { km, minutes, usd, bs };
+
+        const timeLabel = minutes ? ` · ~${minutes} min` : '';
+        fareDistanceBadge.textContent = `${km.toFixed(2)} km${timeLabel}`;
+        fareUsdValue.textContent = `$${usd.toFixed(2)}`;
+        fareBsValue.textContent = `Bs. ${formatBs(bs)}`;
+        fareRateCaption.textContent = `$${rateBase.toFixed(2)}/km (0–${BASE_KM_LIMIT} km) · $${rateExtra.toFixed(2)}/km (>${BASE_KM_LIMIT} km) · BCV: Bs. ${formatBs(bcvRate)}/$`;
+        fareEstimateBox.style.display = 'block';
+      }
+
+      async function updateFareEstimate() {
+        const origin = getActiveOriginCoords();
+        const dest = getActiveDestCoords();
+
+        if (!origin || !dest) {
+          lastFareQuote = null;
+          fareEstimateBox.style.display = 'none';
+          return;
+        }
+
+        // Muestra cálculo rápido inmediato mientras consulta ruta vial OSRM
+        const straightKm = haversineKm(origin.lat, origin.lng, dest.lat, dest.lng);
+        const fallbackKm = Math.max(0.2, straightKm * 1.25);
+        renderFareValues(fallbackKm, Math.max(2, Math.round((fallbackKm / 30) * 60)));
+
+        try {
+          const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${origin.lng},${origin.lat};${dest.lng},${dest.lat}?overview=false`;
+          const res = await fetch(osrmUrl);
+          if (res.ok) {
+            const data = await res.json();
+            const route = data?.routes?.[0];
+            if (route && typeof route.distance === 'number') {
+              const roadKm = Math.max(0.2, route.distance / 1000);
+              const roadMin = Math.max(2, Math.round((route.duration || 0) / 60));
+              renderFareValues(roadKm, roadMin);
+            }
+          }
+        } catch {
+          // Mantiene el respaldo Haversine ya mostrado
+        }
+      }
+
+      // -----------------------------------------------------------
+      // 6. MODAL DE MAPA INTERACTIVO (LEAFLET)
+      // -----------------------------------------------------------
+      async function reverseGeocodePoint(lat, lng) {
+        mapPickedAddress.textContent = `Buscando dirección (${lat.toFixed(4)}, ${lng.toFixed(4)})...`;
+        try {
+          const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&addressdetails=1`;
+          const res = await fetch(url, { headers: { 'Accept-Language': 'es' } });
+          if (res.ok) {
+            const data = await res.json();
+            const a = data.address || {};
+            const labelParts = [
+              a.road || a.amenity || a.building || a.shop,
+              a.suburb || a.neighbourhood || a.quarter || a.city_district
+            ].filter(Boolean);
+            pickedAddressLabel = labelParts.length > 0
+              ? labelParts.join(', ')
+              : (data.display_name ? data.display_name.split(',').slice(0, 2).join(', ') : 'Maracaibo, Zulia');
+            mapPickedAddress.textContent = pickedAddressLabel;
+            return;
+          }
+        } catch {}
+        pickedAddressLabel = `Pin en mapa (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+        mapPickedAddress.textContent = pickedAddressLabel;
+      }
+
+      function setMapPin(lat, lng, shouldPan = false) {
+        pickedLatLng = { lat, lng };
+        if (leafletMarker) {
+          leafletMarker.setLatLng([lat, lng]);
+        }
+        if (shouldPan && leafletMap) {
+          leafletMap.setView([lat, lng], 15);
+        }
+        reverseGeocodePoint(lat, lng);
+      }
+
+      function openMapPicker(target) {
+        activeMapTarget = target;
+        mapModalTitle.textContent = target === 'origin'
+          ? 'Marca tu punto de Origen (Desde)'
+          : 'Marca tu punto de Destino (Hasta)';
+
+        let startLat = MCBO_LAT;
+        let startLng = MCBO_LON;
+        if (target === 'origin' && getActiveOriginCoords()) {
+          startLat = getActiveOriginCoords().lat;
+          startLng = getActiveOriginCoords().lng;
+        } else if (target === 'dest' && getActiveDestCoords()) {
+          startLat = getActiveDestCoords().lat;
+          startLng = getActiveDestCoords().lng;
+        } else if (clientGpsCoords) {
+          startLat = clientGpsCoords.lat;
+          startLng = clientGpsCoords.lng;
+        }
+
+        mapPickerModal.style.display = 'flex';
+
+        setTimeout(() => {
+          if (!leafletMap && typeof L !== 'undefined') {
+            leafletMap = L.map('leaflet-map', {
+              center: [startLat, startLng],
+              zoom: 14,
+              zoomControl: true
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+              maxZoom: 19,
+              attribution: '&copy; OpenStreetMap'
+            }).addTo(leafletMap);
+
+            leafletMarker = L.marker([startLat, startLng], { draggable: true }).addTo(leafletMap);
+
+            leafletMap.on('click', (e) => {
+              setMapPin(e.latlng.lat, e.latlng.lng, false);
+            });
+
+            leafletMarker.on('dragend', () => {
+              const pos = leafletMarker.getLatLng();
+              setMapPin(pos.lat, pos.lng, false);
+            });
+          } else if (leafletMap) {
+            leafletMap.invalidateSize();
+          }
+
+          setMapPin(startLat, startLng, true);
+        }, 60);
+      }
+
+      document.getElementById('btn-pick-origin-map').addEventListener('click', () => openMapPicker('origin'));
+      document.getElementById('btn-pick-dest-map').addEventListener('click', () => openMapPicker('dest'));
+
+      btnCloseMapModal.addEventListener('click', () => {
+        mapPickerModal.style.display = 'none';
+      });
+
+      mapPickerModal.addEventListener('click', (e) => {
+        if (e.target === mapPickerModal) mapPickerModal.style.display = 'none';
+      });
+
+      btnMapCenterGps.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          showToast('GPS no disponible');
+          return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setMapPin(pos.coords.latitude, pos.coords.longitude, true);
+          },
+          () => showToast('Activa el permiso de ubicación'),
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+
+      btnConfirmMapPoint.addEventListener('click', () => {
+        const lat = Number(pickedLatLng.lat.toFixed(6));
+        const lng = Number(pickedLatLng.lng.toFixed(6));
+        const placeObj = {
+          name: pickedAddressLabel,
+          lat,
+          lng,
+          mapsUrl: `https://maps.google.com/?q=${lat},${lng}`
+        };
+
+        if (activeMapTarget === 'origin') {
+          selectedOriginPlace = placeObj;
+          inputOrigin.value = placeObj.name;
+          originPinBadge.style.display = 'inline-block';
+          originSuggestions.style.display = 'none';
+        } else {
+          selectedDestPlace = placeObj;
+          inputDestination.value = placeObj.name;
+          destPinBadge.style.display = 'inline-block';
+          destSuggestions.style.display = 'none';
+        }
+
+        mapPickerModal.style.display = 'none';
+        showToast('Ubicación marcada en el mapa');
+        updateFareEstimate();
+      });
+
+      // -----------------------------------------------------------
+      // 7. BUSCADOR DE LUGARES EN MARACAIBO (PHOTON + NOMINATIM)
       // -----------------------------------------------------------
       async function searchPlacesInMaracaibo(query, signal) {
-        // 1) Intento principal: Photon (Komoot) sesgado a Maracaibo
         try {
           const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${MCBO_LAT}&lon=${MCBO_LON}&limit=6`;
           const res = await fetch(photonUrl, { signal });
@@ -1185,8 +1613,8 @@
                 return {
                   title,
                   subtitle: detailParts.slice(0, 3).join(', ') || 'Maracaibo, Zulia',
-                  lat: Number(lat).toFixed(6),
-                  lng: Number(lon).toFixed(6),
+                  lat: Number(lat),
+                  lng: Number(lon),
                   mapsUrl: `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lon).toFixed(6)}`
                 };
               });
@@ -1197,7 +1625,6 @@
           if (err.name === 'AbortError') throw err;
         }
 
-        // 2) Respaldo: Nominatim enfocado en Venezuela / Maracaibo
         const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Maracaibo')}&countrycodes=ve&limit=5&addressdetails=1`;
         const resNom = await fetch(nomUrl, {
           signal,
@@ -1209,14 +1636,14 @@
           const parts = String(item.display_name || '').split(',').map((s) => s.trim());
           const title = parts[0] || query;
           const subtitle = parts.slice(1, 4).join(', ') || 'Maracaibo, Zulia';
-          const lat = Number(item.lat).toFixed(6);
-          const lng = Number(item.lon).toFixed(6);
+          const lat = Number(item.lat);
+          const lng = Number(item.lon);
           return {
             title,
             subtitle,
             lat,
             lng,
-            mapsUrl: `https://maps.google.com/?q=${lat},${lng}`
+            mapsUrl: `https://maps.google.com/?q=${lat.toFixed(6)},${lng.toFixed(6)}`
           };
         });
       }
@@ -1246,9 +1673,25 @@
         inputEl.addEventListener('input', () => {
           const val = inputEl.value.trim();
 
-          // Si el usuario modifica manualmente el texto, limpia la selección previa
+          // Si el usuario pegó un enlace de Google Maps con coordenadas, extraerlas directo
+          const parsed = parseCoordsFromUrl(val);
+          if (parsed) {
+            onSelect({
+              name: 'Ubicación de Google Maps',
+              lat: parsed.lat,
+              lng: parsed.lng,
+              mapsUrl: parsed.mapsUrl
+            });
+            badgeEl.style.display = 'inline-block';
+            setLoading(false);
+            hideList();
+            updateFareEstimate();
+            return;
+          }
+
           onClearSelection();
           badgeEl.style.display = 'none';
+          updateFareEstimate();
 
           clearTimeout(debounceTimer);
           if (activeController) {
@@ -1256,7 +1699,6 @@
             activeController = null;
           }
 
-          // No buscar si está muy corto o si el usuario pegó directamente un enlace
           if (val.length < 3 || /^https?:\/\//i.test(val)) {
             setLoading(false);
             hideList();
@@ -1273,7 +1715,7 @@
               if (!results.length) {
                 listEl.innerHTML = `
                   <div class="px-3.5 py-3 text-xs text-perla-ink/70 text-center">
-                    Sin resultados exactos. Puedes dejar escrito el nombre o usar <strong>Abrir Maps ↗</strong>.
+                    Sin resultados exactos. Toca <strong>Marcar en mapa</strong> para señalar el punto exacto.
                   </div>
                 `;
                 listEl.style.display = 'block';
@@ -1299,10 +1741,16 @@
                     ? `${place.title} (${place.subtitle.split(',')[0].trim()})`
                     : place.title;
                   inputEl.value = fullLabel;
-                  onSelect({ name: fullLabel, mapsUrl: place.mapsUrl });
+                  onSelect({
+                    name: fullLabel,
+                    lat: place.lat,
+                    lng: place.lng,
+                    mapsUrl: place.mapsUrl
+                  });
                   badgeEl.style.display = 'inline-block';
                   hideList();
-                  showToast('Ubicación seleccionada con mapa');
+                  showToast('Ubicación seleccionada');
+                  updateFareEstimate();
                 });
                 listEl.appendChild(btn);
               });
@@ -1317,7 +1765,6 @@
           }, 360);
         });
 
-        // Cerrar sugerencias al tocar fuera
         document.addEventListener('click', (e) => {
           if (!inputEl.contains(e.target) && !listEl.contains(e.target)) {
             hideList();
@@ -1346,7 +1793,7 @@
       });
 
       // -----------------------------------------------------------
-      // 6. FIREBASE REALTIME DATABASE REST API (GET cada 10s / PUT)
+      // 8. FIREBASE REALTIME DATABASE REST API (GET cada 10s / PUT)
       // -----------------------------------------------------------
       function setSyncStatus(mode, detail) {
         if (mode === 'ok') {
@@ -1387,6 +1834,9 @@
             appState = mergeState(appState, remoteData);
             saveLocalState();
             renderClientView();
+            if (lastFareQuote) {
+              renderFareValues(lastFareQuote.km, lastFareQuote.minutes);
+            }
             if (currentView === 'admin') {
               renderAdminView();
             }
@@ -1406,6 +1856,9 @@
         saveLocalState();
         renderClientView();
         renderAdminView();
+        if (lastFareQuote) {
+          renderFareValues(lastFareQuote.km, lastFareQuote.minutes);
+        }
 
         try {
           const res = await fetch(FIREBASE_ENDPOINT, {
@@ -1442,7 +1895,7 @@
       }
 
       // -----------------------------------------------------------
-      // 7. RENDERIZADO DE VISTAS
+      // 9. RENDERIZADO DE VISTAS
       // -----------------------------------------------------------
       function renderClientView() {
         const initials = getInitials(appState.driverName);
@@ -1578,6 +2031,14 @@
           driverGpsAutoStatus.textContent = 'GPS desactivado (activa tu disponibilidad para detectar sector).';
         }
 
+        const bcv = Number(appState.bcvRate) || 1000;
+        const perKm = Number(appState.pricePerKm) || 0.5;
+        const perKmExtra = Number(appState.pricePerKmExtra) || 0.4;
+        adminRatesBadge.textContent = `Bs. ${formatBs(bcv)}/$ · $${perKm.toFixed(2)} / $${perKmExtra.toFixed(2)}`;
+        if (document.activeElement !== quickBcvRate) quickBcvRate.value = bcv;
+        if (document.activeElement !== quickPriceKm) quickPriceKm.value = perKm;
+        if (document.activeElement !== quickPriceKmExtra) quickPriceKmExtra.value = perKmExtra;
+
         adminCurrentSectorBadge.textContent = appState.sector;
 
         sectorGrid.innerHTML = '';
@@ -1613,7 +2074,7 @@
       }
 
       // -----------------------------------------------------------
-      // 8. TECLADO NUMÉRICO DE PIN (7563 POR DEFECTO)
+      // 10. TECLADO NUMÉRICO DE PIN (7563 POR DEFECTO)
       // -----------------------------------------------------------
       function updatePinDots() {
         pinDots.forEach((dot, idx) => {
@@ -1670,7 +2131,7 @@
       document.getElementById('btn-pin-submit').addEventListener('click', verifyPin);
 
       // -----------------------------------------------------------
-      // 9. EVENTOS DE NAVEGACIÓN ENTRE VISTAS
+      // 11. EVENTOS DE NAVEGACIÓN ENTRE VISTAS
       // -----------------------------------------------------------
       document.getElementById('btn-open-admin').addEventListener('click', () => switchView('pin'));
       document.getElementById('btn-pin-back-top').addEventListener('click', () => switchView('client'));
@@ -1679,7 +2140,7 @@
       document.getElementById('btn-admin-back-bottom').addEventListener('click', () => switchView('client'));
 
       // -----------------------------------------------------------
-      // 10. INTERACCIONES DE LA VISTA CLIENTE
+      // 12. INTERACCIONES DE LA VISTA CLIENTE
       // -----------------------------------------------------------
       const payTabButtons = document.querySelectorAll('.pay-tab');
       const payPanels = {
@@ -1725,7 +2186,7 @@
         copyText(block, '¡Todos los datos copiados!');
       });
 
-      // Ubicación GPS opcional del pasajero
+      // Ubicación GPS actual del pasajero (también sirve como Origen para cotizar)
       btnClientGps.addEventListener('click', () => {
         if (!navigator.geolocation) {
           showToast('Tu navegador no soporta GPS');
@@ -1736,14 +2197,19 @@
 
         navigator.geolocation.getCurrentPosition(
           (pos) => {
-            const lat = pos.coords.latitude.toFixed(6);
-            const lng = pos.coords.longitude.toFixed(6);
-            clientGpsLink = `https://maps.google.com/?q=${lat},${lng}`;
+            const lat = Number(pos.coords.latitude.toFixed(6));
+            const lng = Number(pos.coords.longitude.toFixed(6));
+            clientGpsCoords = {
+              lat,
+              lng,
+              mapsUrl: `https://maps.google.com/?q=${lat},${lng}`
+            };
             clientGpsLabel.textContent = 'Ubicación actual adjunta ✓';
             btnClientGps.classList.add('border-estado-activo/60', 'text-estado-activo');
             btnClearGps.style.display = 'inline-block';
             btnClientGps.disabled = false;
             showToast('Ubicación GPS anexada al origen');
+            updateFareEstimate();
           },
           () => {
             clientGpsLabel.textContent = 'Mi ubicación actual (GPS)';
@@ -1755,13 +2221,14 @@
       });
 
       btnClearGps.addEventListener('click', () => {
-        clientGpsLink = null;
+        clientGpsCoords = null;
         clientGpsLabel.textContent = 'Mi ubicación actual (GPS)';
         btnClientGps.classList.remove('border-estado-activo/60', 'text-estado-activo');
         btnClearGps.style.display = 'none';
+        updateFareEstimate();
       });
 
-      // Botón principal de WhatsApp con lugares seleccionados + enlaces Google Maps
+      // Botón principal de WhatsApp con ubicaciones + cotización en USD y Bs.
       btnWhatsappCta.addEventListener('click', () => {
         const phone = extractDigits(appState.whatsappNumber) || '584146553914';
         const originText = inputOrigin.value.trim();
@@ -1774,28 +2241,34 @@
           lines.push(`Hola ${appState.driverName}, vi en tu app que estás en servicio ahora. ¿Cuándo tendrías disponibilidad para agendar un traslado?`);
         }
 
-        // Bloque DESDE (Origen)
+        // Bloque DESDE
         if (selectedOriginPlace) {
           lines.push(`📍 Desde: ${selectedOriginPlace.name}`);
           lines.push(`🗺️ Mapa origen: ${selectedOriginPlace.mapsUrl}`);
-          if (clientGpsLink) {
-            lines.push(`🛰️ Mi ubicación actual: ${clientGpsLink}`);
+          if (clientGpsCoords) {
+            lines.push(`🛰️ Mi ubicación actual: ${clientGpsCoords.mapsUrl}`);
           }
-        } else if (originText && clientGpsLink) {
+        } else if (originText && clientGpsCoords) {
           lines.push(`📍 Desde: ${originText}`);
-          lines.push(`🛰️ Mi ubicación actual: ${clientGpsLink}`);
-        } else if (clientGpsLink) {
-          lines.push(`📍 Desde (Mi ubicación actual): ${clientGpsLink}`);
+          lines.push(`🛰️ Mi ubicación actual: ${clientGpsCoords.mapsUrl}`);
+        } else if (clientGpsCoords) {
+          lines.push(`📍 Desde (Mi ubicación actual): ${clientGpsCoords.mapsUrl}`);
         } else if (originText) {
           lines.push(`📍 Desde: ${originText}`);
         }
 
-        // Bloque HASTA (Destino)
+        // Bloque HASTA
         if (selectedDestPlace) {
           lines.push(`🏁 Hasta: ${selectedDestPlace.name}`);
           lines.push(`🗺️ Mapa destino: ${selectedDestPlace.mapsUrl}`);
         } else if (destinationText) {
           lines.push(`🏁 Hasta: ${destinationText}`);
+        }
+
+        // Bloque COTIZACIÓN
+        if (lastFareQuote) {
+          lines.push(`📏 Distancia aprox.: ${lastFareQuote.km.toFixed(2)} km`);
+          lines.push(`💵 Estimado: $${lastFareQuote.usd.toFixed(2)} (Bs. ${formatBs(lastFareQuote.bs)} a tasa BCV ${formatBs(appState.bcvRate)})`);
         }
 
         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
@@ -1876,9 +2349,30 @@
       });
 
       // -----------------------------------------------------------
-      // 11. INTERACCIONES DEL PANEL ADMINISTRADOR + GPS SOLO ACTIVO
+      // 13. INTERACCIONES DEL PANEL ADMINISTRADOR + GPS SOLO ACTIVO
       // -----------------------------------------------------------
       btnForceSync.addEventListener('click', () => fetchFromFirebase(false));
+
+      btnSaveRates.addEventListener('click', async () => {
+        const newBcv = parseFloat(quickBcvRate.value);
+        const newPerKm = parseFloat(quickPriceKm.value);
+        const newPerKmExtra = parseFloat(quickPriceKmExtra.value);
+
+        if (
+          isNaN(newBcv) || newBcv <= 0 ||
+          isNaN(newPerKm) || newPerKm <= 0 ||
+          isNaN(newPerKmExtra) || newPerKmExtra <= 0
+        ) {
+          showToast('Ingresa valores válidos mayores a 0');
+          return;
+        }
+
+        appState.bcvRate = newBcv;
+        appState.pricePerKm = newPerKm;
+        appState.pricePerKmExtra = newPerKmExtra;
+        const synced = await saveToFirebase();
+        showToast(synced ? '¡Tasa BCV y tarifas actualizadas!' : 'Tasas guardadas en modo local');
+      });
 
       function stopDriverGpsTracking() {
         if (driverGpsTimer) {
@@ -2027,7 +2521,7 @@
       });
 
       // -----------------------------------------------------------
-      // 12. INICIALIZACIÓN
+      // 14. INICIALIZACIÓN
       // -----------------------------------------------------------
       switchView('client');
       fetchFromFirebase(false);
