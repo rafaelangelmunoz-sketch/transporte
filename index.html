@@ -1,0 +1,1700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#2B2D42" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Rafael Muñoz" />
+  <meta name="description" content="Rafael Muñoz — Transporte Privado en Maracaibo. Disponibilidad en vivo, sector actual y datos de pago." />
+  <title>Rafael Muñoz — Transporte Privado</title>
+
+  <!-- Tipografía Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            // 60% Principal — Zafiro Profundo
+            zafiro: {
+              dark: '#2B2D42',
+              main: '#383B54',
+              card: '#484B68',
+              text: '#F7F5F2',
+              muted: '#C5C7D6',
+            },
+            // 30% Secundario — Blanco Perla
+            perla: {
+              bg: '#EAE6E1',
+              box: '#D8D1C9',
+              ink: '#242638',
+            },
+            // 10% Acento — Naranja Brasa
+            brasa: {
+              DEFAULT: '#FF5A12',
+              hover: '#E04B0A',
+            },
+            // Estados
+            estado: {
+              activo: '#10B981',
+              ocupado: '#EF4444',
+            },
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- Generador ligero de QR en cliente (con respaldo SVG/API si falla la red) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    html, body {
+      background-color: #2B2D42;
+      color: #F7F5F2;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+
+    @keyframes pulseBeacon {
+      0% { transform: scale(0.85); opacity: 0.85; }
+      75% { transform: scale(2.2); opacity: 0; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    .pulse-beacon {
+      animation: pulseBeacon 2s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+    }
+
+    @keyframes shakeError {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-6px); }
+      40%, 80% { transform: translateX(6px); }
+    }
+    .animate-shake {
+      animation: shakeError 0.35s ease-in-out;
+    }
+
+    #qr-container img,
+    #qr-container canvas {
+      display: block;
+      margin: 0 auto;
+      border-radius: 8px;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-zafiro-dark text-zafiro-text flex justify-center items-start sm:py-6 sm:px-4 selection:bg-brasa/30 selection:text-zafiro-text">
+
+  <!-- Contenedor principal tipo app móvil -->
+  <div id="app-shell" class="w-full max-w-[460px] min-h-screen sm:min-h-[820px] bg-zafiro-dark sm:rounded-[28px] sm:border sm:border-zafiro-card sm:shadow-[0_24px_64px_rgba(0,0,0,0.45)] relative overflow-hidden">
+
+    <!-- =========================================================== -->
+    <!-- VISTA 1: VISTA PÚBLICA DEL CLIENTE (#view-client)           -->
+    <!-- =========================================================== -->
+    <div id="view-client" style="display: block;" class="w-full min-h-screen sm:min-h-[820px] pb-8">
+
+      <!-- Encabezado Compacto (60% Zafiro Profundo) -->
+      <header class="bg-zafiro-main px-5 py-3.5 border-b border-zafiro-card flex items-center justify-between gap-3 sticky top-0 z-20">
+        <div class="flex items-center gap-2.5 min-w-0">
+          <div class="w-9 h-9 rounded-xl bg-zafiro-dark border border-zafiro-card flex items-center justify-center shrink-0">
+            <span id="header-monogram" class="text-xs font-extrabold tracking-tight text-zafiro-text">RM</span>
+          </div>
+          <div class="min-w-0">
+            <p id="header-title" class="text-sm font-extrabold text-zafiro-text leading-tight truncate">Rafael Muñoz</p>
+            <p id="header-subtitle" class="text-[11px] font-medium text-zafiro-muted leading-tight truncate">Transporte Privado · Maracaibo</p>
+          </div>
+        </div>
+
+        <!-- Botones QR/NFC y Candado Privado -->
+        <div class="flex items-center gap-2 shrink-0">
+          <button
+            id="btn-open-qr"
+            type="button"
+            aria-label="Mostrar código QR y enlace NFC"
+            class="h-10 px-3 rounded-xl bg-zafiro-dark hover:bg-zafiro-card border border-zafiro-card text-zafiro-text text-xs font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <svg class="w-4 h-4 text-zafiro-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h7v7H3V3zm11 0h7v7h-7V3zM3 14h7v7H3v-7zm11 3h3m4 0h-1m-3-3v7m4-3v3"/>
+            </svg>
+            <span>QR / NFC</span>
+          </button>
+
+          <button
+            id="btn-open-admin"
+            type="button"
+            aria-label="Acceso administrador"
+            title="Panel del Conductor"
+            class="w-10 h-10 rounded-xl bg-zafiro-dark hover:bg-zafiro-card border border-zafiro-card flex items-center justify-center text-zafiro-muted hover:text-zafiro-text transition-colors cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Cuerpo Principal Vista Cliente -->
+      <main class="px-5 pt-5 space-y-4">
+
+        <!-- Tarjeta de Perfil del Conductor (Zafiro Profundo) -->
+        <section class="bg-zafiro-main border border-zafiro-card rounded-2xl p-4 flex items-center gap-3.5">
+          <div class="relative shrink-0">
+            <div class="w-14 h-14 rounded-2xl bg-zafiro-dark border border-zafiro-card flex items-center justify-center shadow-inner">
+              <span id="client-monogram" class="text-lg font-extrabold tracking-tight text-zafiro-text">RM</span>
+            </div>
+            <span id="avatar-status-dot" class="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-estado-activo border-2 border-zafiro-main"></span>
+          </div>
+
+          <div class="min-w-0 flex-1">
+            <h1 id="client-driver-name" class="text-lg font-extrabold text-zafiro-text tracking-tight leading-tight truncate">
+              Rafael Muñoz
+            </h1>
+            <p id="client-driver-subtitle" class="text-xs font-medium text-zafiro-muted mt-0.5 truncate">
+              Transporte Privado · Maracaibo
+            </p>
+            <div id="client-vehicle-row" style="display: none;" class="mt-2 flex flex-wrap items-center gap-1.5">
+              <span id="client-vehicle-badge" class="inline-flex items-center px-2 py-0.5 rounded-lg bg-zafiro-dark border border-zafiro-card text-[11px] font-semibold text-zafiro-text"></span>
+              <span id="client-plate-badge" class="inline-flex items-center px-2 py-0.5 rounded-lg bg-zafiro-dark border border-zafiro-card text-[11px] font-bold tracking-wider uppercase text-zafiro-muted"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Banner de Disponibilidad y Sector en Vivo (Zafiro Profundo) -->
+        <section id="status-card" class="bg-zafiro-main border border-estado-activo/45 rounded-2xl p-4 transition-all duration-300">
+          <div class="flex items-start gap-3">
+            <!-- Punto indicador pulsante -->
+            <div class="relative flex items-center justify-center w-4 h-4 mt-1 shrink-0">
+              <span id="status-pulse" class="pulse-beacon absolute inline-flex h-full w-full rounded-full bg-estado-activo"></span>
+              <span id="status-dot" class="relative inline-flex rounded-full h-3 w-3 bg-estado-activo"></span>
+            </div>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center justify-between gap-2">
+                <span id="status-badge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider uppercase bg-estado-activo/15 text-estado-activo border border-estado-activo/30">
+                  DISPONIBLE
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-zafiro-muted">
+                  <span id="live-dot" class="w-1.5 h-1.5 rounded-full bg-estado-activo"></span>
+                  En vivo
+                </span>
+              </div>
+
+              <p id="status-sector-text" class="text-sm font-semibold text-zafiro-text mt-2">
+                Activo en: <span class="font-extrabold">Bella Vista</span>
+              </p>
+
+              <p class="text-[11px] text-zafiro-muted mt-1.5 flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <span id="client-last-updated">Actualizado hace un momento</span>
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Bloque de Solicitud por WhatsApp (Zafiro Profundo + 10% Naranja Brasa) -->
+        <section class="bg-zafiro-main border border-zafiro-card rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <h2 class="text-sm font-extrabold text-zafiro-text tracking-tight">Solicitar Servicio</h2>
+            <span id="client-whatsapp-display" class="text-xs font-semibold text-zafiro-muted">0414-655-3914</span>
+          </div>
+
+          <input
+            id="input-destination"
+            type="text"
+            placeholder="Destino o punto de referencia (opcional)"
+            class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3.5 py-3 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
+          />
+
+          <!-- Botón opcional para adjuntar ubicación GPS del cliente -->
+          <div class="flex items-center gap-2">
+            <button
+              id="btn-client-gps"
+              type="button"
+              class="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-zafiro-dark hover:bg-zafiro-card/70 border border-zafiro-card text-xs font-semibold text-zafiro-text transition-colors cursor-pointer"
+            >
+              <svg class="w-4 h-4 text-zafiro-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+              </svg>
+              <span id="client-gps-label">Adjuntar mi ubicación GPS</span>
+            </button>
+
+            <button
+              id="btn-clear-gps"
+              type="button"
+              style="display: none;"
+              class="px-3 py-2.5 rounded-xl bg-zafiro-dark border border-estado-ocupado/50 text-xs font-bold text-estado-ocupado hover:bg-estado-ocupado/10 transition-colors cursor-pointer"
+            >
+              Quitar
+            </button>
+          </div>
+
+          <!-- Aviso cuando el conductor está ocupado -->
+          <p id="busy-whatsapp-note" style="display: none;" class="text-xs text-zafiro-muted bg-zafiro-dark border border-zafiro-card rounded-xl px-3 py-2 leading-relaxed">
+            Actualmente en servicio o fuera de línea. Puedes escribirme por WhatsApp para consultar disponibilidad o agendar tu traslado.
+          </p>
+
+          <!-- Botón Principal de WhatsApp (10% Naranja Brasa #FF5A12) -->
+          <button
+            id="btn-whatsapp-cta"
+            type="button"
+            class="w-full py-3.5 px-4 rounded-xl bg-brasa hover:bg-brasa-hover active:scale-[0.99] text-zafiro-text font-extrabold text-sm tracking-tight shadow-lg shadow-brasa/25 flex items-center justify-center gap-2.5 transition-all cursor-pointer"
+          >
+            <svg class="w-5 h-5 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12.031 2C6.504 2 2.008 6.495 2.008 12.022c0 1.766.462 3.49 1.339 5.012L2 22l5.106-1.338a9.97 9.97 0 004.925 1.298h.004c5.526 0 10.022-4.496 10.022-10.023C22.057 6.495 17.558 2 12.031 2zm5.829 14.236c-.245.691-1.434 1.32-1.979 1.401-.504.075-1.158.106-1.872-.12-.434-.138-.993-.323-1.703-.63-2.997-1.293-4.953-4.327-5.102-4.526-.15-.199-1.219-1.622-1.219-3.095 0-1.472.772-2.196 1.046-2.495.274-.299.598-.374.797-.374.2 0 .399.002.573.01.184.009.43-.07.673.514.249.599.847 2.071.922 2.221.075.15.125.324.025.524-.1.199-.15.324-.299.499-.15.174-.314.39-.449.524-.15.149-.306.311-.131.611.174.299.776 1.281 1.667 2.075 1.146 1.022 2.112 1.339 2.411 1.488.299.15.474.125.648-.075.175-.199.748-.873.947-1.172.2-.299.399-.249.673-.15.274.1 1.745.823 2.044.972.299.15.498.224.573.349.075.125.075.723-.17 1.414z"/>
+            </svg>
+            <span id="whatsapp-cta-label">Solicitar servicio por WhatsApp</span>
+          </button>
+        </section>
+
+        <!-- ======================================================= -->
+        <!-- 30% SECUNDARIO (BLANCO PERLA #EAE6E1): DATOS DE PAGO    -->
+        <!-- ======================================================= -->
+        <section class="bg-perla-bg text-perla-ink rounded-2xl p-4 shadow-md border border-perla-box space-y-3.5">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-extrabold text-perla-ink tracking-tight">Datos de Pago</h2>
+            <span class="text-[11px] font-semibold text-perla-ink/70">Toca para copiar</span>
+          </div>
+
+          <!-- Pestañas: Pago Móvil | Binance Pay | Efectivo / Zelle -->
+          <div class="grid grid-cols-3 gap-1 p-1 rounded-xl bg-perla-box" role="tablist">
+            <button
+              type="button"
+              data-pay-tab="pagomovil"
+              class="pay-tab py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer bg-brasa text-zafiro-text shadow-sm"
+            >
+              Pago Móvil
+            </button>
+            <button
+              type="button"
+              data-pay-tab="binance"
+              class="pay-tab py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-perla-ink/80 hover:text-perla-ink"
+            >
+              Binance Pay
+            </button>
+            <button
+              type="button"
+              data-pay-tab="efectivo"
+              class="pay-tab py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-perla-ink/80 hover:text-perla-ink"
+            >
+              Efectivo / Zelle
+            </button>
+          </div>
+
+          <!-- Panel 1: Pago Móvil -->
+          <div id="panel-pagomovil" style="display: block;" class="space-y-2">
+            <!-- Banco -->
+            <div class="flex items-center justify-between bg-perla-box/65 border border-perla-box rounded-xl px-3.5 py-2.5">
+              <div class="min-w-0 pr-2">
+                <p class="text-[10px] uppercase tracking-wider font-bold text-perla-ink/65">Banco</p>
+                <p id="pm-banco-display" class="text-sm font-extrabold text-perla-ink truncate">Banesco (0134)</p>
+              </div>
+              <button
+                id="btn-copy-banco"
+                type="button"
+                class="shrink-0 px-3 py-2 rounded-lg bg-perla-bg hover:bg-zafiro-dark hover:text-zafiro-text border border-perla-box text-xs font-bold text-perla-ink flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copiar
+              </button>
+            </div>
+
+            <!-- Cédula -->
+            <div class="flex items-center justify-between bg-perla-box/65 border border-perla-box rounded-xl px-3.5 py-2.5">
+              <div class="min-w-0 pr-2">
+                <p class="text-[10px] uppercase tracking-wider font-bold text-perla-ink/65">Cédula</p>
+                <p id="pm-cedula-display" class="text-sm font-extrabold text-perla-ink truncate">V-15.465.909</p>
+              </div>
+              <button
+                id="btn-copy-cedula"
+                type="button"
+                class="shrink-0 px-3 py-2 rounded-lg bg-perla-bg hover:bg-zafiro-dark hover:text-zafiro-text border border-perla-box text-xs font-bold text-perla-ink flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copiar
+              </button>
+            </div>
+
+            <!-- Teléfono -->
+            <div class="flex items-center justify-between bg-perla-box/65 border border-perla-box rounded-xl px-3.5 py-2.5">
+              <div class="min-w-0 pr-2">
+                <p class="text-[10px] uppercase tracking-wider font-bold text-perla-ink/65">Teléfono</p>
+                <p id="pm-telefono-display" class="text-sm font-extrabold text-perla-ink truncate">0414-655-3914</p>
+              </div>
+              <button
+                id="btn-copy-telefono"
+                type="button"
+                class="shrink-0 px-3 py-2 rounded-lg bg-perla-bg hover:bg-zafiro-dark hover:text-zafiro-text border border-perla-box text-xs font-bold text-perla-ink flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                Copiar
+              </button>
+            </div>
+
+            <!-- Botón destacado Copiar todos los datos (Naranja Brasa) -->
+            <button
+              id="btn-copy-all-pm"
+              type="button"
+              class="w-full mt-1 py-3 px-4 rounded-xl bg-brasa hover:bg-brasa-hover active:scale-[0.99] text-zafiro-text text-xs font-extrabold tracking-wide shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"/>
+              </svg>
+              Copiar todos los datos
+            </button>
+          </div>
+
+          <!-- Panel 2: Binance Pay -->
+          <div id="panel-binance" style="display: none;" class="space-y-2">
+            <!-- Renderizado dinámicamente -->
+          </div>
+
+          <!-- Panel 3: Efectivo / Zelle -->
+          <div id="panel-efectivo" style="display: none;" class="space-y-2.5">
+            <div class="bg-perla-box/65 border border-perla-box rounded-xl p-3.5 flex items-start gap-3">
+              <div class="w-9 h-9 rounded-xl bg-zafiro-dark text-zafiro-text flex items-center justify-center shrink-0">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+              </div>
+              <div>
+                <p class="text-sm font-extrabold text-perla-ink">Efectivo (USD / Bolívares)</p>
+                <p class="text-xs text-perla-ink/80 mt-1 leading-relaxed">
+                  Acepto divisas en buen estado y Bolívares en efectivo. Si necesitas vuelto, avísame por WhatsApp al solicitar tu servicio.
+                </p>
+              </div>
+            </div>
+            <!-- Contenedor Zelle si está configurado -->
+            <div id="panel-zelle-slot"></div>
+          </div>
+        </section>
+
+        <!-- Nota para guardar en pantalla de inicio -->
+        <p class="text-[11px] text-zafiro-muted/80 text-center pt-1">
+          Agrega esta app a tu pantalla de inicio para consultar disponibilidad y pagar en un toque.
+        </p>
+      </main>
+    </div>
+
+
+    <!-- =========================================================== -->
+    <!-- VISTA 2: PANTALLA DE PIN (#view-pin)                        -->
+    <!-- =========================================================== -->
+    <div id="view-pin" style="display: none;" class="w-full min-h-screen sm:min-h-[820px] px-5 py-8">
+      <!-- Botón superior para regresar -->
+      <div class="mb-5">
+        <button
+          id="btn-pin-back-top"
+          type="button"
+          class="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-zafiro-main hover:bg-zafiro-card border border-zafiro-card text-xs font-bold text-zafiro-text transition-colors cursor-pointer"
+        >
+          ← Volver a Vista Cliente
+        </button>
+      </div>
+
+      <!-- Tarjeta PIN (30% Blanco Perla #EAE6E1) -->
+      <div class="bg-perla-bg text-perla-ink rounded-3xl p-6 text-center space-y-5 shadow-xl border border-perla-box">
+        <div class="w-12 h-12 mx-auto rounded-2xl bg-zafiro-dark text-zafiro-text flex items-center justify-center shadow-md">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+        </div>
+
+        <div>
+          <h2 class="text-lg font-extrabold text-perla-ink">Acceso Conductor</h2>
+          <p class="text-xs text-perla-ink/75 mt-1">Ingresa tu PIN de 4 dígitos para administrar</p>
+        </div>
+
+        <!-- 4 Puntos Indicadores -->
+        <div id="pin-dots-container" class="flex items-center justify-center gap-3 py-1">
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-perla-ink/40 bg-transparent transition-all"></span>
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-perla-ink/40 bg-transparent transition-all"></span>
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-perla-ink/40 bg-transparent transition-all"></span>
+          <span class="pin-dot w-4 h-4 rounded-full border-2 border-perla-ink/40 bg-transparent transition-all"></span>
+        </div>
+
+        <p id="pin-error" style="display: none;" class="text-xs font-extrabold text-estado-ocupado">
+          PIN incorrecto. Intenta nuevamente.
+        </p>
+
+        <!-- Teclado Numérico Táctil -->
+        <div class="grid grid-cols-3 gap-2.5 max-w-[270px] mx-auto">
+          <button type="button" data-pin-digit="1" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">1</button>
+          <button type="button" data-pin-digit="2" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">2</button>
+          <button type="button" data-pin-digit="3" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">3</button>
+          <button type="button" data-pin-digit="4" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">4</button>
+          <button type="button" data-pin-digit="5" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">5</button>
+          <button type="button" data-pin-digit="6" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">6</button>
+          <button type="button" data-pin-digit="7" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">7</button>
+          <button type="button" data-pin-digit="8" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">8</button>
+          <button type="button" data-pin-digit="9" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">9</button>
+          <button type="button" id="btn-pin-clear" class="h-14 rounded-2xl bg-perla-box/45 hover:bg-perla-box active:scale-95 text-xs font-extrabold text-perla-ink/80 border border-perla-box transition-all cursor-pointer">Limpiar</button>
+          <button type="button" data-pin-digit="0" class="pin-key h-14 rounded-2xl bg-perla-box/80 hover:bg-perla-box active:scale-95 text-xl font-extrabold text-perla-ink border border-perla-box transition-all cursor-pointer">0</button>
+          <button type="button" id="btn-pin-backspace" aria-label="Borrar último dígito" class="h-14 rounded-2xl bg-perla-box/45 hover:bg-perla-box active:scale-95 flex items-center justify-center text-perla-ink/80 border border-perla-box transition-all cursor-pointer">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6.414 6.414a2 2 0 001.414.586H19a2 2 0 002-2V7a2 2 0 00-2-2h-8.172a2 2 0 00-1.414.586L3 12z"/>
+            </svg>
+          </button>
+        </div>
+
+        <button
+          id="btn-pin-submit"
+          type="button"
+          class="w-full py-3.5 rounded-xl bg-brasa hover:bg-brasa-hover active:scale-[0.99] text-zafiro-text font-extrabold text-sm shadow-md shadow-brasa/25 transition-all cursor-pointer"
+        >
+          Entrar al Panel
+        </button>
+
+        <button
+          id="btn-pin-back-bottom"
+          type="button"
+          class="w-full py-2.5 rounded-xl text-xs font-bold text-perla-ink/75 hover:text-perla-ink hover:bg-perla-box/50 transition-colors cursor-pointer"
+        >
+          ← Volver a Vista Cliente
+        </button>
+      </div>
+    </div>
+
+
+    <!-- =========================================================== -->
+    <!-- VISTA 3: PANEL PRIVADO DEL CONDUCTOR (#view-admin)          -->
+    <!-- =========================================================== -->
+    <div id="view-admin" style="display: none;" class="w-full min-h-screen sm:min-h-[820px] pb-10">
+
+      <!-- Barra Superior Fija -->
+      <header class="bg-zafiro-main px-5 py-3.5 border-b border-zafiro-card flex items-center justify-between gap-3 sticky top-0 z-20">
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest text-zafiro-muted">Panel Privado</span>
+          <h2 class="text-base font-extrabold text-zafiro-text leading-tight">Administrador</h2>
+        </div>
+
+        <button
+          id="btn-admin-back-top"
+          type="button"
+          class="px-4 py-2.5 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text text-xs font-extrabold shadow-sm flex items-center gap-1.5 transition-colors cursor-pointer"
+        >
+          ← Vista Cliente
+        </button>
+      </header>
+
+      <div class="px-5 pt-5 space-y-4">
+
+        <!-- Indicador Discreto de Sincronización Firebase (Solo visible en Admin) -->
+        <div id="sync-status-banner" class="rounded-2xl px-4 py-3 border text-xs flex items-center justify-between gap-2 bg-zafiro-main border-zafiro-card text-zafiro-muted">
+          <div class="flex items-center gap-2 min-w-0">
+            <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-zafiro-muted shrink-0"></span>
+            <span id="sync-status-text" class="font-semibold truncate">Conectando con Firebase...</span>
+          </div>
+          <button
+            id="btn-force-sync"
+            type="button"
+            class="shrink-0 text-[11px] font-bold underline text-zafiro-text hover:text-zafiro-muted cursor-pointer"
+          >
+            Sincronizar
+          </button>
+        </div>
+
+        <!-- Interruptor Grande de Disponibilidad -->
+        <section class="bg-zafiro-main border border-zafiro-card rounded-2xl p-5 space-y-3">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <p class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted">Estado en vivo</p>
+              <p id="admin-status-text" class="text-lg font-extrabold text-estado-activo mt-0.5">Disponible</p>
+            </div>
+
+            <button
+              id="btn-toggle-availability"
+              type="button"
+              role="switch"
+              aria-checked="true"
+              class="relative inline-flex h-12 w-[84px] shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-300 ease-in-out bg-estado-activo focus:outline-none shadow-inner"
+            >
+              <span
+                id="toggle-knob"
+                class="pointer-events-none inline-block h-11 w-11 transform rounded-full bg-zafiro-text shadow-md transition duration-300 ease-in-out translate-x-9"
+              ></span>
+            </button>
+          </div>
+          <p class="text-xs text-zafiro-muted leading-relaxed">
+            Al activar o pausar tu estado, se sincroniza automáticamente para que tus clientes lo vean en tiempo real.
+          </p>
+        </section>
+
+        <!-- Selector de 12 Sectores de Maracaibo (30% Blanco Perla #EAE6E1) -->
+        <section class="bg-perla-bg text-perla-ink border border-perla-box rounded-2xl p-4 space-y-3.5 shadow-md">
+          <div class="flex items-center justify-between gap-2">
+            <h3 class="text-sm font-extrabold text-perla-ink">Sector Actual (Maracaibo)</h3>
+            <span id="admin-current-sector-badge" class="text-xs font-extrabold text-zafiro-text bg-zafiro-dark px-2.5 py-1 rounded-lg truncate max-w-[160px]">
+              Bella Vista
+            </span>
+          </div>
+
+          <!-- Botón Detectar Sector por GPS (Nominatim, solo guarda el nombre del barrio/sector) -->
+          <button
+            id="btn-detect-sector"
+            type="button"
+            class="w-full py-3 px-4 rounded-xl bg-zafiro-dark hover:bg-zafiro-main active:scale-[0.99] text-zafiro-text font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+          >
+            <svg id="detect-gps-spinner" style="display: none;" class="w-4 h-4 animate-spin text-zafiro-text" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+            </svg>
+            <svg id="detect-gps-icon" class="w-4 h-4 text-zafiro-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path stroke-linecap="round" d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+            </svg>
+            <span id="detect-gps-label">Detectar sector por GPS</span>
+          </button>
+
+          <!-- Cuadrícula de 12 Sectores Rápidos -->
+          <div id="sector-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <!-- Generado dinámicamente por JS -->
+          </div>
+
+          <!-- Sector personalizado -->
+          <div class="flex gap-2 pt-1">
+            <input
+              id="input-custom-sector"
+              type="text"
+              placeholder="Otro sector..."
+              class="flex-1 bg-perla-box/65 border border-perla-box focus:border-brasa rounded-xl px-3.5 py-2.5 text-sm text-perla-ink placeholder-perla-ink/50 outline-none"
+            />
+            <button
+              id="btn-set-custom-sector"
+              type="button"
+              class="px-4 py-2.5 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text font-extrabold text-xs transition-colors cursor-pointer shrink-0"
+            >
+              Fijar
+            </button>
+          </div>
+        </section>
+
+        <!-- Sección Colapsable para Editar Datos y Pagos -->
+        <section class="bg-zafiro-main border border-zafiro-card rounded-2xl overflow-hidden">
+          <button
+            id="btn-toggle-settings"
+            type="button"
+            aria-expanded="false"
+            class="w-full px-4 py-4 flex items-center justify-between text-left hover:bg-zafiro-card/40 transition-colors cursor-pointer"
+          >
+            <div>
+              <h3 class="text-sm font-extrabold text-zafiro-text">Editar Datos, Pagos y PIN</h3>
+              <p class="text-[11px] text-zafiro-muted mt-0.5">Nombre, vehículo, WhatsApp, Pago Móvil, Binance, Zelle</p>
+            </div>
+            <svg id="settings-chevron" class="w-5 h-5 text-zafiro-muted transition-transform duration-200 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+
+          <div id="settings-body" style="display: none;" class="px-4 pb-4 pt-1 border-t border-zafiro-card">
+            <form id="settings-form" class="space-y-4 pt-3">
+              <!-- Perfil y Vehículo -->
+              <div class="space-y-2.5">
+                <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Perfil y Contacto</p>
+                <div>
+                  <label class="block text-[11px] text-zafiro-muted mb-1">Nombre visible</label>
+                  <input id="cfg-name" type="text" required class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] text-zafiro-muted mb-1">Vehículo (opcional)</label>
+                    <input id="cfg-vehicle" type="text" placeholder="Ej. Aveo Gris" class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] text-zafiro-muted mb-1">Placa (opcional)</label>
+                    <input id="cfg-plate" type="text" placeholder="Ej. AB123CD" class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text uppercase outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] text-zafiro-muted mb-1">WhatsApp (con 58, ej: 584146553914)</label>
+                  <input id="cfg-whatsapp" type="tel" required class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                </div>
+              </div>
+
+              <!-- Pago Móvil -->
+              <div class="space-y-2.5 pt-3 border-t border-zafiro-card">
+                <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Pago Móvil</p>
+                <div>
+                  <label class="block text-[11px] text-zafiro-muted mb-1">Banco</label>
+                  <input id="cfg-pm-banco" type="text" required class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                </div>
+                <div class="grid grid-cols-2 gap-2.5">
+                  <div>
+                    <label class="block text-[11px] text-zafiro-muted mb-1">Cédula</label>
+                    <input id="cfg-pm-cedula" type="text" required class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[11px] text-zafiro-muted mb-1">Teléfono</label>
+                    <input id="cfg-pm-telefono" type="text" required class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Binance Pay y Zelle -->
+              <div class="space-y-2.5 pt-3 border-t border-zafiro-card">
+                <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Pagos Digitales (Opcional)</p>
+                <div>
+                  <label class="block text-[11px] text-zafiro-muted mb-1">Binance Pay (ID o correo)</label>
+                  <input id="cfg-binance" type="text" placeholder="Dejar vacío si no aplica" class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                </div>
+                <div>
+                  <label class="block text-[11px] text-zafiro-muted mb-1">Zelle (correo o teléfono)</label>
+                  <input id="cfg-zelle" type="text" placeholder="Dejar vacío si no aplica" class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                </div>
+              </div>
+
+              <!-- Seguridad -->
+              <div class="space-y-2.5 pt-3 border-t border-zafiro-card">
+                <p class="text-[11px] font-extrabold uppercase tracking-wider text-zafiro-muted">Seguridad</p>
+                <div>
+                  <label class="block text-[11px] text-zafiro-muted mb-1">PIN de Administrador (4 dígitos)</label>
+                  <input id="cfg-pin" type="text" inputmode="numeric" maxlength="4" required class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3 py-2.5 text-sm text-zafiro-text outline-none" />
+                </div>
+              </div>
+
+              <!-- Botón Guardar Cambios (Naranja Brasa) -->
+              <button
+                type="submit"
+                class="w-full py-3.5 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text font-extrabold text-sm shadow-md shadow-brasa/25 active:scale-[0.99] transition-all cursor-pointer"
+              >
+                Guardar cambios
+              </button>
+            </form>
+          </div>
+        </section>
+
+        <!-- Botón Inferior para Volver a Vista Cliente -->
+        <button
+          id="btn-admin-back-bottom"
+          type="button"
+          class="w-full py-3.5 rounded-2xl bg-zafiro-main hover:bg-zafiro-card border border-zafiro-card text-zafiro-text font-extrabold text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer"
+        >
+          ← Volver a Vista Cliente
+        </button>
+
+      </div>
+    </div>
+
+
+    <!-- =========================================================== -->
+    <!-- MODAL: CÓDIGO QR / ENLACE NFC (30% BLANCO PERLA #EAE6E1)    -->
+    <!-- =========================================================== -->
+    <div id="qr-modal" style="display: none;" class="fixed inset-0 z-50 bg-zafiro-dark/85 backdrop-blur-sm flex items-center justify-center p-5">
+      <div class="bg-perla-bg text-perla-ink border border-perla-box rounded-3xl w-full max-w-[340px] p-6 text-center space-y-4 shadow-2xl relative">
+        <button
+          id="btn-close-qr"
+          type="button"
+          aria-label="Cerrar modal QR"
+          class="absolute top-4 right-4 w-8 h-8 rounded-full bg-perla-box hover:bg-zafiro-dark hover:text-zafiro-text flex items-center justify-center text-perla-ink transition-colors cursor-pointer"
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+
+        <div>
+          <span class="text-[10px] font-extrabold uppercase tracking-widest text-perla-ink/70">Código QR y Etiqueta NFC</span>
+          <h3 id="qr-modal-name" class="text-base font-extrabold text-perla-ink mt-0.5">Rafael Muñoz</h3>
+          <p class="text-xs text-perla-ink/75 mt-1 leading-relaxed">
+            Escanea este QR o graba el enlace en tu tarjeta NFC para compartir disponibilidad y datos de pago.
+          </p>
+        </div>
+
+        <!-- Contenedor del QR -->
+        <div class="bg-white p-4 rounded-2xl inline-flex flex-col items-center justify-center border border-perla-box shadow-inner min-w-[228px] min-h-[228px]">
+          <div id="qr-container"></div>
+        </div>
+
+        <div class="space-y-2">
+          <button
+            id="btn-copy-nfc-url"
+            type="button"
+            class="w-full py-3 px-4 rounded-xl bg-brasa hover:bg-brasa-hover text-zafiro-text text-xs font-extrabold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+            </svg>
+            Copiar enlace para NFC / QR
+          </button>
+
+          <button
+            id="btn-share-link"
+            type="button"
+            class="w-full py-2.5 px-4 rounded-xl bg-zafiro-dark hover:bg-zafiro-main text-zafiro-text text-xs font-bold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+          >
+            <svg class="w-4 h-4 text-zafiro-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
+            </svg>
+            Compartir enlace
+          </button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- =========================================================== -->
+    <!-- NOTIFICACIÓN TOAST                                          -->
+    <!-- =========================================================== -->
+    <div
+      id="toast"
+      class="pointer-events-none fixed bottom-6 left-1/2 -translate-x-1/2 z-50 opacity-0 translate-y-3 transition-all duration-300"
+    >
+      <div class="bg-zafiro-main border border-brasa text-zafiro-text px-4 py-2.5 rounded-full shadow-xl flex items-center gap-2 text-xs font-bold whitespace-nowrap">
+        <span class="w-2 h-2 rounded-full bg-brasa shrink-0"></span>
+        <span id="toast-message">¡Copiado!</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- =========================================================== -->
+  <!-- LÓGICA DE APLICACIÓN + FIREBASE REALTIME DATABASE REST API  -->
+  <!-- =========================================================== -->
+  <script>
+    (function () {
+      'use strict';
+
+      // -----------------------------------------------------------
+      // 1. CONSTANTES Y ESTADO INICIAL PRECARGADO
+      // -----------------------------------------------------------
+      const STORAGE_KEY = 'rm_transporte_v3';
+      const FIREBASE_ENDPOINT = 'https://mi-transporte-56598-default-rtdb.firebaseio.com/conductor.json';
+      const POLL_INTERVAL_MS = 10000;
+
+      // 12 Sectores rápidos de Maracaibo
+      const MARACAIBO_SECTORS = [
+        'Bella Vista',
+        '5 de Julio',
+        'La Limpia',
+        'El Milagro',
+        'Centro',
+        'Zona Norte',
+        'Delicias',
+        'Vereda del Lago',
+        'Circunvalación 2',
+        'Sabaneta',
+        'Indio Mara',
+        'Curva de Molina'
+      ];
+
+      const DEFAULT_STATE = {
+        driverName: 'Rafael Muñoz',
+        subtitle: 'Transporte Privado · Maracaibo',
+        vehicle: '',
+        plate: '',
+        whatsappNumber: '584146553914',
+        available: true,
+        sector: 'Bella Vista',
+        updatedAt: Date.now(),
+        pagoMovil: {
+          banco: 'Banesco (0134)',
+          cedula: 'V-15.465.909',
+          telefono: '0414-655-3914'
+        },
+        otrosPagos: {
+          binance: '',
+          zelle: ''
+        },
+        pin: '7563'
+      };
+
+      let appState = loadLocalState();
+      let currentView = 'client';
+      let pinBuffer = '';
+      let clientGpsLink = null;
+      let toastTimer = null;
+      let pollTimer = null;
+
+      // -----------------------------------------------------------
+      // 2. REFERENCIAS DEL DOM
+      // -----------------------------------------------------------
+      const viewClient = document.getElementById('view-client');
+      const viewPin = document.getElementById('view-pin');
+      const viewAdmin = document.getElementById('view-admin');
+
+      // Vista Cliente
+      const headerMonogram = document.getElementById('header-monogram');
+      const headerTitle = document.getElementById('header-title');
+      const headerSubtitle = document.getElementById('header-subtitle');
+      const clientMonogram = document.getElementById('client-monogram');
+      const avatarStatusDot = document.getElementById('avatar-status-dot');
+      const clientDriverName = document.getElementById('client-driver-name');
+      const clientDriverSubtitle = document.getElementById('client-driver-subtitle');
+      const clientVehicleRow = document.getElementById('client-vehicle-row');
+      const clientVehicleBadge = document.getElementById('client-vehicle-badge');
+      const clientPlateBadge = document.getElementById('client-plate-badge');
+
+      const statusCard = document.getElementById('status-card');
+      const statusPulse = document.getElementById('status-pulse');
+      const statusDot = document.getElementById('status-dot');
+      const statusBadge = document.getElementById('status-badge');
+      const liveDot = document.getElementById('live-dot');
+      const statusSectorText = document.getElementById('status-sector-text');
+      const clientLastUpdated = document.getElementById('client-last-updated');
+
+      const clientWhatsappDisplay = document.getElementById('client-whatsapp-display');
+      const inputDestination = document.getElementById('input-destination');
+      const btnClientGps = document.getElementById('btn-client-gps');
+      const clientGpsLabel = document.getElementById('client-gps-label');
+      const btnClearGps = document.getElementById('btn-clear-gps');
+      const busyWhatsappNote = document.getElementById('busy-whatsapp-note');
+      const btnWhatsappCta = document.getElementById('btn-whatsapp-cta');
+      const whatsappCtaLabel = document.getElementById('whatsapp-cta-label');
+
+      const pmBancoDisplay = document.getElementById('pm-banco-display');
+      const pmCedulaDisplay = document.getElementById('pm-cedula-display');
+      const pmTelefonoDisplay = document.getElementById('pm-telefono-display');
+      const panelBinance = document.getElementById('panel-binance');
+      const panelZelleSlot = document.getElementById('panel-zelle-slot');
+
+      // Vista PIN
+      const pinDotsContainer = document.getElementById('pin-dots-container');
+      const pinDots = document.querySelectorAll('.pin-dot');
+      const pinError = document.getElementById('pin-error');
+
+      // Vista Admin
+      const syncStatusBanner = document.getElementById('sync-status-banner');
+      const syncStatusDot = document.getElementById('sync-status-dot');
+      const syncStatusText = document.getElementById('sync-status-text');
+      const btnForceSync = document.getElementById('btn-force-sync');
+
+      const btnToggleAvailability = document.getElementById('btn-toggle-availability');
+      const toggleKnob = document.getElementById('toggle-knob');
+      const adminStatusText = document.getElementById('admin-status-text');
+      const adminCurrentSectorBadge = document.getElementById('admin-current-sector-badge');
+      const sectorGrid = document.getElementById('sector-grid');
+      const inputCustomSector = document.getElementById('input-custom-sector');
+      const btnSetCustomSector = document.getElementById('btn-set-custom-sector');
+
+      const btnDetectSector = document.getElementById('btn-detect-sector');
+      const detectGpsSpinner = document.getElementById('detect-gps-spinner');
+      const detectGpsIcon = document.getElementById('detect-gps-icon');
+      const detectGpsLabel = document.getElementById('detect-gps-label');
+
+      const btnToggleSettings = document.getElementById('btn-toggle-settings');
+      const settingsChevron = document.getElementById('settings-chevron');
+      const settingsBody = document.getElementById('settings-body');
+      const settingsForm = document.getElementById('settings-form');
+
+      // Modal QR y Toast
+      const qrModal = document.getElementById('qr-modal');
+      const qrModalName = document.getElementById('qr-modal-name');
+      const qrContainer = document.getElementById('qr-container');
+      const toastEl = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+
+      // -----------------------------------------------------------
+      // 3. NAVEGACIÓN DIRECTA Y 100% SEGURA POR DOM
+      //    (Sin hashchange ni history.replaceState)
+      // -----------------------------------------------------------
+      function switchView(target) {
+        currentView = target;
+
+        // Ocultar los tres contenedores de forma explícita
+        viewClient.style.display = 'none';
+        viewPin.style.display = 'none';
+        viewAdmin.style.display = 'none';
+
+        // Mostrar inmediatamente la vista solicitada
+        if (target === 'pin') {
+          pinBuffer = '';
+          updatePinDots();
+          pinError.style.display = 'none';
+          viewPin.style.display = 'block';
+        } else if (target === 'admin') {
+          renderAdminView();
+          fillSettingsForm();
+          viewAdmin.style.display = 'block';
+        } else {
+          currentView = 'client';
+          renderClientView();
+          viewClient.style.display = 'block';
+        }
+
+        try {
+          window.scrollTo(0, 0);
+        } catch (e) {}
+      }
+
+      // -----------------------------------------------------------
+      // 4. ESTADO LOCAL, PROTECCIÓN DE PIN Y UTILIDADES
+      // -----------------------------------------------------------
+      function mergeState(base, incoming) {
+        if (!incoming || typeof incoming !== 'object') return base;
+        const merged = {
+          ...base,
+          ...incoming,
+          pagoMovil: {
+            ...base.pagoMovil,
+            ...(incoming.pagoMovil || {})
+          },
+          otrosPagos: {
+            ...base.otrosPagos,
+            ...(incoming.otrosPagos || {})
+          }
+        };
+        // Protege el PIN actual (7563) frente a valores antiguos como 1234
+        if (!merged.pin || String(merged.pin).trim() === '1234') {
+          merged.pin = '7563';
+        }
+        return merged;
+      }
+
+      function loadLocalState() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return JSON.parse(JSON.stringify(DEFAULT_STATE));
+          return mergeState(JSON.parse(JSON.stringify(DEFAULT_STATE)), JSON.parse(raw));
+        } catch {
+          return JSON.parse(JSON.stringify(DEFAULT_STATE));
+        }
+      }
+
+      function saveLocalState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+        } catch (err) {
+          console.warn('No se pudo guardar en localStorage:', err);
+        }
+      }
+
+      function showToast(msg = '¡Copiado!') {
+        toastMessage.textContent = msg;
+        toastEl.classList.remove('opacity-0', 'translate-y-3');
+        toastEl.classList.add('opacity-100', 'translate-y-0');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => {
+          toastEl.classList.add('opacity-0', 'translate-y-3');
+          toastEl.classList.remove('opacity-100', 'translate-y-0');
+        }, 2300);
+      }
+
+      // Copiado compatible con iframes y móviles mediante document.execCommand('copy')
+      function copyText(value, message = '¡Copiado!') {
+        try {
+          const ta = document.createElement('textarea');
+          ta.value = value;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.left = '-9999px';
+          document.body.appendChild(ta);
+          ta.select();
+          ta.setSelectionRange(0, 99999);
+          const ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          showToast(ok ? message : 'No se pudo copiar automáticamente');
+        } catch {
+          showToast('Error al copiar');
+        }
+      }
+
+      function getInitials(name) {
+        if (!name) return 'RM';
+        const parts = name.trim().split(/\s+/);
+        return ((parts[0]?.[0] || '') + (parts[1]?.[0] || parts[0]?.[1] || '')).toUpperCase();
+      }
+
+      function formatVePhoneDisplay(raw) {
+        const digits = String(raw || '').replace(/\D/g, '');
+        let local = digits;
+        if (local.startsWith('58') && local.length === 12) {
+          local = '0' + local.slice(2);
+        }
+        if (local.length === 11) {
+          return `${local.slice(0, 4)}-${local.slice(4, 7)}-${local.slice(7)}`;
+        }
+        return raw || '0414-655-3914';
+      }
+
+      function extractBankCode(bancoStr) {
+        const match = String(bancoStr || '').match(/\b\d{4}\b/);
+        return match ? match[0] : String(bancoStr || '').trim();
+      }
+
+      function extractDigits(str) {
+        return String(str || '').replace(/\D/g, '');
+      }
+
+      function formatUpdatedTime(ts) {
+        if (!ts) return 'Actualizado hace un momento';
+        try {
+          const d = new Date(ts);
+          const timeStr = d.toLocaleTimeString('es-VE', {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+          return `Actualizado: ${timeStr}`;
+        } catch {
+          return 'Actualizado recientemente';
+        }
+      }
+
+      function escapeHtml(str) {
+        return String(str || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      // -----------------------------------------------------------
+      // 5. FIREBASE REALTIME DATABASE REST API (GET cada 10s / PUT)
+      // -----------------------------------------------------------
+      function setSyncStatus(mode, detail) {
+        if (mode === 'ok') {
+          syncStatusBanner.className = 'rounded-2xl px-4 py-3 border text-xs flex items-center justify-between gap-2 bg-zafiro-main border-estado-activo/40 text-zafiro-text';
+          syncStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-estado-activo shrink-0';
+          syncStatusText.textContent = detail || 'Sincronizado con Firebase';
+        } else if (mode === 'local') {
+          syncStatusBanner.className = 'rounded-2xl px-4 py-3 border text-xs flex items-center justify-between gap-2 bg-zafiro-main border-brasa/60 text-zafiro-text';
+          syncStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-brasa shrink-0';
+          syncStatusText.textContent = detail || 'Modo local (sin conexión a Firebase)';
+        } else {
+          syncStatusBanner.className = 'rounded-2xl px-4 py-3 border text-xs flex items-center justify-between gap-2 bg-zafiro-main border-zafiro-card text-zafiro-muted';
+          syncStatusDot.className = 'w-2.5 h-2.5 rounded-full bg-zafiro-muted shrink-0';
+          syncStatusText.textContent = detail || 'Sincronizando...';
+        }
+      }
+
+      async function fetchFromFirebase(silent = false) {
+        if (!silent) setSyncStatus('loading', 'Consultando Firebase...');
+        try {
+          const res = await fetch(FIREBASE_ENDPOINT, {
+            method: 'GET',
+            cache: 'no-store'
+          });
+
+          if (res.status === 401 || res.status === 403) {
+            setSyncStatus('local', 'Modo local: revisa Rules en Firebase');
+            return false;
+          }
+
+          if (!res.ok) {
+            setSyncStatus('local', `Modo local: error HTTP ${res.status}`);
+            return false;
+          }
+
+          const remoteData = await res.json();
+          if (remoteData && typeof remoteData === 'object') {
+            appState = mergeState(appState, remoteData);
+            saveLocalState();
+            renderClientView();
+            if (currentView === 'admin') {
+              renderAdminView();
+            }
+            setSyncStatus('ok', 'Sincronizado con Firebase en tiempo real');
+          } else {
+            setSyncStatus('ok', 'Conectado a Firebase (listo para guardar)');
+          }
+          return true;
+        } catch {
+          setSyncStatus('local', 'Modo local (respaldo activo)');
+          return false;
+        }
+      }
+
+      async function saveToFirebase() {
+        appState.updatedAt = Date.now();
+        saveLocalState();
+        renderClientView();
+        renderAdminView();
+
+        try {
+          const res = await fetch(FIREBASE_ENDPOINT, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(appState)
+          });
+
+          if (res.status === 401 || res.status === 403) {
+            setSyncStatus('local', 'Guardado local: Firebase bloqueó escritura');
+            return false;
+          }
+
+          if (!res.ok) {
+            setSyncStatus('local', `Guardado local: error Firebase (${res.status})`);
+            return false;
+          }
+
+          setSyncStatus('ok', 'Sincronizado con Firebase');
+          return true;
+        } catch {
+          setSyncStatus('local', 'Guardado en modo local (sin conexión)');
+          return false;
+        }
+      }
+
+      function startPolling() {
+        if (pollTimer) clearInterval(pollTimer);
+        pollTimer = setInterval(() => {
+          if (currentView === 'client') {
+            fetchFromFirebase(true);
+          }
+        }, POLL_INTERVAL_MS);
+      }
+
+      // -----------------------------------------------------------
+      // 6. RENDERIZADO DE VISTAS
+      // -----------------------------------------------------------
+      function renderClientView() {
+        const initials = getInitials(appState.driverName);
+        document.title = `${appState.driverName} — Transporte Privado`;
+        headerMonogram.textContent = initials;
+        headerTitle.textContent = appState.driverName;
+        headerSubtitle.textContent = appState.subtitle || 'Transporte Privado · Maracaibo';
+        clientMonogram.textContent = initials;
+        clientDriverName.textContent = appState.driverName;
+        clientDriverSubtitle.textContent = appState.subtitle || 'Transporte Privado · Maracaibo';
+        qrModalName.textContent = appState.driverName;
+        clientWhatsappDisplay.textContent = formatVePhoneDisplay(appState.whatsappNumber);
+
+        // Vehículo y Placa (opcionales)
+        const hasVehicle = Boolean((appState.vehicle || '').trim());
+        const hasPlate = Boolean((appState.plate || '').trim());
+        if (hasVehicle || hasPlate) {
+          clientVehicleRow.style.display = 'flex';
+          clientVehicleBadge.textContent = appState.vehicle;
+          clientVehicleBadge.style.display = hasVehicle ? 'inline-flex' : 'none';
+          clientPlateBadge.textContent = `Placa: ${appState.plate}`;
+          clientPlateBadge.style.display = hasPlate ? 'inline-flex' : 'none';
+        } else {
+          clientVehicleRow.style.display = 'none';
+        }
+
+        // Banner de estado en vivo
+        if (appState.available) {
+          avatarStatusDot.className = 'absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-estado-activo border-2 border-zafiro-main';
+          statusCard.className = 'bg-zafiro-main border border-estado-activo/45 rounded-2xl p-4 transition-all duration-300';
+          statusPulse.style.display = 'inline-flex';
+          statusDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-estado-activo';
+          statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider uppercase bg-estado-activo/15 text-estado-activo border border-estado-activo/30';
+          statusBadge.textContent = 'DISPONIBLE';
+          liveDot.className = 'w-1.5 h-1.5 rounded-full bg-estado-activo';
+          statusSectorText.innerHTML = `Activo en: <span class="font-extrabold text-zafiro-text">${escapeHtml(appState.sector)}</span>`;
+          busyWhatsappNote.style.display = 'none';
+          whatsappCtaLabel.textContent = 'Solicitar servicio por WhatsApp';
+        } else {
+          avatarStatusDot.className = 'absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-estado-ocupado border-2 border-zafiro-main';
+          statusCard.className = 'bg-zafiro-main border border-estado-ocupado/45 rounded-2xl p-4 transition-all duration-300';
+          statusPulse.style.display = 'none';
+          statusDot.className = 'relative inline-flex rounded-full h-3 w-3 bg-estado-ocupado';
+          statusBadge.className = 'inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-extrabold tracking-wider uppercase bg-estado-ocupado/15 text-estado-ocupado border border-estado-ocupado/30';
+          statusBadge.textContent = 'OCUPADO / FUERA DE SERVICIO';
+          liveDot.className = 'w-1.5 h-1.5 rounded-full bg-estado-ocupado';
+          statusSectorText.innerHTML = `<span class="text-xs font-normal text-zafiro-muted">En servicio o sin disponibilidad inmediata</span>`;
+          busyWhatsappNote.style.display = 'block';
+          whatsappCtaLabel.textContent = 'Escribir por WhatsApp para agendar';
+        }
+
+        clientLastUpdated.textContent = formatUpdatedTime(appState.updatedAt);
+
+        // Datos de Pago Móvil
+        pmBancoDisplay.textContent = appState.pagoMovil.banco || 'Banesco (0134)';
+        pmCedulaDisplay.textContent = appState.pagoMovil.cedula || 'V-15.465.909';
+        pmTelefonoDisplay.textContent = appState.pagoMovil.telefono || '0414-655-3914';
+
+        // Pestañas Binance Pay y Efectivo / Zelle
+        renderOtherPaymentTabs();
+      }
+
+      function renderOtherPaymentTabs() {
+        const binance = (appState.otrosPagos?.binance || '').trim();
+        const zelle = (appState.otrosPagos?.zelle || '').trim();
+
+        // Panel Binance Pay
+        panelBinance.innerHTML = '';
+        if (binance) {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between bg-perla-box/65 border border-perla-box rounded-xl px-3.5 py-3';
+          row.innerHTML = `
+            <div class="min-w-0 pr-2">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-perla-ink/65">Binance Pay (ID / Correo)</p>
+              <p class="text-sm font-extrabold text-perla-ink truncate">${escapeHtml(binance)}</p>
+            </div>
+            <button type="button" class="shrink-0 px-3 py-2 rounded-lg bg-brasa hover:bg-brasa-hover text-zafiro-text text-xs font-bold transition-colors cursor-pointer">
+              Copiar
+            </button>
+          `;
+          row.querySelector('button').addEventListener('click', () => copyText(binance, '¡Binance Pay copiado!'));
+          panelBinance.appendChild(row);
+        } else {
+          panelBinance.innerHTML = `
+            <div class="bg-perla-box/65 border border-perla-box rounded-xl p-4 text-center">
+              <p class="text-sm font-extrabold text-perla-ink">Binance Pay</p>
+              <p class="text-xs text-perla-ink/75 mt-1">Consultar ID o correo de Binance por WhatsApp antes de transferir.</p>
+            </div>
+          `;
+        }
+
+        // Slot Zelle dentro de Efectivo / Zelle
+        panelZelleSlot.innerHTML = '';
+        if (zelle) {
+          const row = document.createElement('div');
+          row.className = 'flex items-center justify-between bg-perla-box/65 border border-perla-box rounded-xl px-3.5 py-2.5';
+          row.innerHTML = `
+            <div class="min-w-0 pr-2">
+              <p class="text-[10px] uppercase tracking-wider font-bold text-perla-ink/65">Zelle</p>
+              <p class="text-sm font-extrabold text-perla-ink truncate">${escapeHtml(zelle)}</p>
+            </div>
+            <button type="button" class="shrink-0 px-3 py-2 rounded-lg bg-perla-bg hover:bg-zafiro-dark hover:text-zafiro-text border border-perla-box text-xs font-bold text-perla-ink transition-colors cursor-pointer">
+              Copiar
+            </button>
+          `;
+          row.querySelector('button').addEventListener('click', () => copyText(zelle, '¡Zelle copiado!'));
+          panelZelleSlot.appendChild(row);
+        } else {
+          panelZelleSlot.innerHTML = `
+            <div class="bg-perla-box/45 border border-perla-box rounded-xl px-3.5 py-2.5">
+              <p class="text-xs font-bold text-perla-ink">Zelle</p>
+              <p class="text-[11px] text-perla-ink/75 mt-0.5">Consultar disponibilidad de Zelle por WhatsApp.</p>
+            </div>
+          `;
+        }
+      }
+
+      function renderAdminView() {
+        btnToggleAvailability.setAttribute('aria-checked', String(appState.available));
+        if (appState.available) {
+          btnToggleAvailability.classList.remove('bg-estado-ocupado');
+          btnToggleAvailability.classList.add('bg-estado-activo');
+          toggleKnob.classList.add('translate-x-9');
+          toggleKnob.classList.remove('translate-x-0');
+          adminStatusText.textContent = 'Disponible';
+          adminStatusText.className = 'text-lg font-extrabold text-estado-activo mt-0.5';
+        } else {
+          btnToggleAvailability.classList.remove('bg-estado-activo');
+          btnToggleAvailability.classList.add('bg-estado-ocupado');
+          toggleKnob.classList.remove('translate-x-9');
+          toggleKnob.classList.add('translate-x-0');
+          adminStatusText.textContent = 'Ocupado / Fuera de servicio';
+          adminStatusText.className = 'text-lg font-extrabold text-estado-ocupado mt-0.5';
+        }
+
+        adminCurrentSectorBadge.textContent = appState.sector;
+
+        // Renderizar los 12 sectores rápidos
+        sectorGrid.innerHTML = '';
+        MARACAIBO_SECTORS.forEach((sec) => {
+          const isSelected = appState.sector.toLowerCase() === sec.toLowerCase();
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = sec;
+          btn.className = isSelected
+            ? 'py-2.5 px-2 rounded-xl text-xs font-extrabold bg-brasa text-zafiro-text shadow-sm transition-all cursor-pointer truncate'
+            : 'py-2.5 px-2 rounded-xl text-xs font-bold bg-perla-box/65 hover:bg-perla-box text-perla-ink border border-perla-box transition-all cursor-pointer truncate';
+          btn.addEventListener('click', async () => {
+            appState.sector = sec;
+            inputCustomSector.value = '';
+            const synced = await saveToFirebase();
+            showToast(synced ? `Sector: ${sec}` : `Sector guardado localmente: ${sec}`);
+          });
+          sectorGrid.appendChild(btn);
+        });
+      }
+
+      function fillSettingsForm() {
+        document.getElementById('cfg-name').value = appState.driverName || '';
+        document.getElementById('cfg-vehicle').value = appState.vehicle || '';
+        document.getElementById('cfg-plate').value = appState.plate || '';
+        document.getElementById('cfg-whatsapp').value = appState.whatsappNumber || '';
+        document.getElementById('cfg-pm-banco').value = appState.pagoMovil.banco || '';
+        document.getElementById('cfg-pm-cedula').value = appState.pagoMovil.cedula || '';
+        document.getElementById('cfg-pm-telefono').value = appState.pagoMovil.telefono || '';
+        document.getElementById('cfg-binance').value = appState.otrosPagos?.binance || '';
+        document.getElementById('cfg-zelle').value = appState.otrosPagos?.zelle || '';
+        document.getElementById('cfg-pin').value = appState.pin || '7563';
+      }
+
+      // -----------------------------------------------------------
+      // 7. TECLADO NUMÉRICO DE PIN (7563 POR DEFECTO)
+      // -----------------------------------------------------------
+      function updatePinDots() {
+        pinDots.forEach((dot, idx) => {
+          if (idx < pinBuffer.length) {
+            dot.classList.remove('bg-transparent', 'border-perla-ink/40');
+            dot.classList.add('bg-brasa', 'border-brasa', 'scale-110');
+          } else {
+            dot.classList.add('bg-transparent', 'border-perla-ink/40');
+            dot.classList.remove('bg-brasa', 'border-brasa', 'scale-110');
+          }
+        });
+      }
+
+      function verifyPin() {
+        const expectedPin = String(appState.pin || '7563').trim();
+        if (pinBuffer === expectedPin) {
+          pinError.style.display = 'none';
+          switchView('admin');
+        } else {
+          pinError.style.display = 'block';
+          pinDotsContainer.classList.add('animate-shake');
+          setTimeout(() => {
+            pinDotsContainer.classList.remove('animate-shake');
+            pinBuffer = '';
+            updatePinDots();
+          }, 380);
+        }
+      }
+
+      document.querySelectorAll('.pin-key').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          if (pinBuffer.length >= 4) return;
+          pinError.style.display = 'none';
+          pinBuffer += btn.dataset.pinDigit;
+          updatePinDots();
+          if (pinBuffer.length === 4) {
+            setTimeout(verifyPin, 140);
+          }
+        });
+      });
+
+      document.getElementById('btn-pin-backspace').addEventListener('click', () => {
+        pinBuffer = pinBuffer.slice(0, -1);
+        pinError.style.display = 'none';
+        updatePinDots();
+      });
+
+      document.getElementById('btn-pin-clear').addEventListener('click', () => {
+        pinBuffer = '';
+        pinError.style.display = 'none';
+        updatePinDots();
+      });
+
+      document.getElementById('btn-pin-submit').addEventListener('click', verifyPin);
+
+      // -----------------------------------------------------------
+      // 8. EVENTOS DE NAVEGACIÓN ENTRE VISTAS
+      // -----------------------------------------------------------
+      document.getElementById('btn-open-admin').addEventListener('click', () => switchView('pin'));
+      document.getElementById('btn-pin-back-top').addEventListener('click', () => switchView('client'));
+      document.getElementById('btn-pin-back-bottom').addEventListener('click', () => switchView('client'));
+      document.getElementById('btn-admin-back-top').addEventListener('click', () => switchView('client'));
+      document.getElementById('btn-admin-back-bottom').addEventListener('click', () => switchView('client'));
+
+      // -----------------------------------------------------------
+      // 9. INTERACCIONES DE LA VISTA CLIENTE
+      // -----------------------------------------------------------
+      const payTabButtons = document.querySelectorAll('.pay-tab');
+      const payPanels = {
+        pagomovil: document.getElementById('panel-pagomovil'),
+        binance: document.getElementById('panel-binance'),
+        efectivo: document.getElementById('panel-efectivo')
+      };
+
+      payTabButtons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const target = btn.dataset.payTab;
+          payTabButtons.forEach((b) => {
+            b.className = 'pay-tab py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer text-perla-ink/80 hover:text-perla-ink';
+          });
+          btn.className = 'pay-tab py-2 px-1.5 rounded-lg text-[11px] sm:text-xs font-bold transition-all cursor-pointer bg-brasa text-zafiro-text shadow-sm';
+
+          Object.keys(payPanels).forEach((key) => {
+            payPanels[key].style.display = key === target ? 'block' : 'none';
+          });
+        });
+      });
+
+      // Copiado limpio individual y en bloque para Pago Móvil
+      document.getElementById('btn-copy-banco').addEventListener('click', () => {
+        const code = extractBankCode(appState.pagoMovil.banco);
+        copyText(code, `¡Banco copiado (${code})!`);
+      });
+
+      document.getElementById('btn-copy-cedula').addEventListener('click', () => {
+        copyText(extractDigits(appState.pagoMovil.cedula), '¡Cédula copiada!');
+      });
+
+      document.getElementById('btn-copy-telefono').addEventListener('click', () => {
+        copyText(extractDigits(appState.pagoMovil.telefono), '¡Teléfono copiado!');
+      });
+
+      document.getElementById('btn-copy-all-pm').addEventListener('click', () => {
+        const block = [
+          `Pago Móvil - ${appState.driverName}`,
+          `Banco: ${appState.pagoMovil.banco}`,
+          `Cédula: ${extractDigits(appState.pagoMovil.cedula)}`,
+          `Teléfono: ${extractDigits(appState.pagoMovil.telefono)}`
+        ].join('\n');
+        copyText(block, '¡Todos los datos copiados!');
+      });
+
+      // Ubicación GPS opcional del pasajero
+      btnClientGps.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          showToast('Tu navegador no soporta GPS');
+          return;
+        }
+        clientGpsLabel.textContent = 'Obteniendo ubicación...';
+        btnClientGps.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lng = pos.coords.longitude.toFixed(6);
+            clientGpsLink = `https://maps.google.com/?q=${lat},${lng}`;
+            clientGpsLabel.textContent = 'Ubicación GPS adjunta ✓';
+            btnClientGps.classList.add('border-estado-activo/60', 'text-estado-activo');
+            btnClearGps.style.display = 'inline-block';
+            btnClientGps.disabled = false;
+            showToast('Ubicación lista para enviar');
+          },
+          () => {
+            clientGpsLabel.textContent = 'Adjuntar mi ubicación GPS';
+            btnClientGps.disabled = false;
+            showToast('Activa el permiso de ubicación');
+          },
+          { enableHighAccuracy: true, timeout: 10000 }
+        );
+      });
+
+      btnClearGps.addEventListener('click', () => {
+        clientGpsLink = null;
+        clientGpsLabel.textContent = 'Adjuntar mi ubicación GPS';
+        btnClientGps.classList.remove('border-estado-activo/60', 'text-estado-activo');
+        btnClearGps.style.display = 'none';
+      });
+
+      // Botón principal de WhatsApp
+      btnWhatsappCta.addEventListener('click', () => {
+        const phone = extractDigits(appState.whatsappNumber) || '584146553914';
+        const destination = inputDestination.value.trim();
+        const lines = [];
+
+        if (appState.available) {
+          lines.push(`Hola ${appState.driverName}, vi en tu app que estás disponible en ${appState.sector}, necesito un servicio.`);
+        } else {
+          lines.push(`Hola ${appState.driverName}, vi en tu app que estás en servicio ahora. ¿Cuándo tendrías disponibilidad para agendar un traslado?`);
+        }
+
+        if (destination) {
+          lines.push(`• Destino / Referencia: ${destination}`);
+        }
+        if (clientGpsLink) {
+          lines.push(`• Mi ubicación GPS: ${clientGpsLink}`);
+        }
+
+        const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
+        window.open(waUrl, '_blank', 'noopener,noreferrer');
+      });
+
+      // Modal QR / NFC
+      function getPublicUrl() {
+        return window.location.href.split('#')[0];
+      }
+
+      function renderQrCode() {
+        const url = getPublicUrl();
+        qrContainer.innerHTML = '';
+
+        try {
+          if (typeof QRCode !== 'undefined') {
+            new QRCode(qrContainer, {
+              text: url,
+              width: 196,
+              height: 196,
+              colorDark: '#242638',
+              colorLight: '#ffffff',
+              correctLevel: QRCode.CorrectLevel.M
+            });
+            return;
+          }
+        } catch (err) {
+          console.warn('Error generando QR local:', err);
+        }
+
+        const img = document.createElement('img');
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=196x196&color=242638&bgcolor=ffffff&data=${encodeURIComponent(url)}`;
+        img.alt = 'Código QR de acceso';
+        img.width = 196;
+        img.height = 196;
+        img.onerror = function () {
+          qrContainer.innerHTML = `
+            <div class="w-[196px] h-[196px] rounded-xl bg-perla-box/50 border border-dashed border-perla-ink/30 flex flex-col items-center justify-center p-4 text-center">
+              <p class="text-xs font-bold text-perla-ink">QR sin conexión</p>
+              <p class="text-[11px] text-perla-ink/70 mt-1">Usa el botón inferior para copiar tu enlace NFC</p>
+            </div>
+          `;
+        };
+        qrContainer.appendChild(img);
+      }
+
+      document.getElementById('btn-open-qr').addEventListener('click', () => {
+        qrModal.style.display = 'flex';
+        renderQrCode();
+      });
+
+      document.getElementById('btn-close-qr').addEventListener('click', () => {
+        qrModal.style.display = 'none';
+      });
+
+      qrModal.addEventListener('click', (e) => {
+        if (e.target === qrModal) qrModal.style.display = 'none';
+      });
+
+      document.getElementById('btn-copy-nfc-url').addEventListener('click', () => {
+        copyText(getPublicUrl(), '¡Enlace copiado para NFC / QR!');
+      });
+
+      document.getElementById('btn-share-link').addEventListener('click', async () => {
+        const url = getPublicUrl();
+        if (navigator.share) {
+          try {
+            await navigator.share({
+              title: `${appState.driverName} — Transporte Privado`,
+              text: 'Consulta mi disponibilidad en vivo y datos de pago:',
+              url
+            });
+          } catch {}
+        } else {
+          copyText(url, '¡Enlace copiado!');
+        }
+      });
+
+      // -----------------------------------------------------------
+      // 10. INTERACCIONES DEL PANEL ADMINISTRADOR
+      // -----------------------------------------------------------
+      btnForceSync.addEventListener('click', () => fetchFromFirebase(false));
+
+      btnToggleAvailability.addEventListener('click', async () => {
+        appState.available = !appState.available;
+        const synced = await saveToFirebase();
+        const msg = appState.available ? 'Estado: DISPONIBLE' : 'Estado: OCUPADO';
+        showToast(synced ? msg : `${msg} (local)`);
+      });
+
+      btnSetCustomSector.addEventListener('click', async () => {
+        const val = inputCustomSector.value.trim();
+        if (!val) {
+          showToast('Escribe un sector');
+          return;
+        }
+        appState.sector = val;
+        inputCustomSector.value = '';
+        const synced = await saveToFirebase();
+        showToast(synced ? `Sector: ${val}` : `Sector guardado localmente: ${val}`);
+      });
+
+      // Acordeón para sección de edición de datos
+      btnToggleSettings.addEventListener('click', () => {
+        const isOpen = settingsBody.style.display === 'block';
+        settingsBody.style.display = isOpen ? 'none' : 'block';
+        btnToggleSettings.setAttribute('aria-expanded', String(!isOpen));
+        settingsChevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+      });
+
+      // Detectar sector aproximado por GPS (solo guarda nombre de sector/barrio)
+      btnDetectSector.addEventListener('click', () => {
+        if (!navigator.geolocation) {
+          showToast('GPS no disponible');
+          return;
+        }
+
+        detectGpsSpinner.style.display = 'inline-block';
+        detectGpsIcon.style.display = 'none';
+        detectGpsLabel.textContent = 'Detectando sector...';
+        btnDetectSector.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            try {
+              const { latitude, longitude } = pos.coords;
+              const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1`;
+              const res = await fetch(url, {
+                headers: { 'Accept-Language': 'es' }
+              });
+              if (!res.ok) throw new Error('Error en Nominatim');
+              const data = await res.json();
+              const addr = data.address || {};
+
+              const sectorName =
+                addr.suburb ||
+                addr.neighbourhood ||
+                addr.city_district ||
+                addr.quarter ||
+                addr.town ||
+                addr.city ||
+                'Maracaibo';
+
+              appState.sector = sectorName;
+              await saveToFirebase();
+              showToast(`Sector detectado: ${sectorName}`);
+            } catch {
+              showToast('No se pudo detectar el sector');
+            } finally {
+              resetGpsBtn();
+            }
+          },
+          () => {
+            showToast('Permiso de ubicación denegado');
+            resetGpsBtn();
+          },
+          { enableHighAccuracy: false, timeout: 10000 }
+        );
+      });
+
+      function resetGpsBtn() {
+        detectGpsSpinner.style.display = 'none';
+        detectGpsIcon.style.display = 'inline-block';
+        detectGpsLabel.textContent = 'Detectar sector por GPS';
+        btnDetectSector.disabled = false;
+      }
+
+      // Guardar configuración editada
+      settingsForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        appState.driverName = document.getElementById('cfg-name').value.trim() || 'Rafael Muñoz';
+        appState.vehicle = document.getElementById('cfg-vehicle').value.trim();
+        appState.plate = document.getElementById('cfg-plate').value.trim().toUpperCase();
+        appState.whatsappNumber = extractDigits(document.getElementById('cfg-whatsapp').value) || '584146553914';
+
+        appState.pagoMovil.banco = document.getElementById('cfg-pm-banco').value.trim() || 'Banesco (0134)';
+        appState.pagoMovil.cedula = document.getElementById('cfg-pm-cedula').value.trim() || 'V-15.465.909';
+        appState.pagoMovil.telefono = document.getElementById('cfg-pm-telefono').value.trim() || '0414-655-3914';
+
+        appState.otrosPagos.binance = document.getElementById('cfg-binance').value.trim();
+        appState.otrosPagos.zelle = document.getElementById('cfg-zelle').value.trim();
+
+        const newPin = extractDigits(document.getElementById('cfg-pin').value).slice(0, 4);
+        if (newPin.length === 4) {
+          appState.pin = newPin;
+        }
+
+        const synced = await saveToFirebase();
+        showToast(synced ? '¡Cambios guardados en Firebase!' : 'Cambios guardados en modo local');
+      });
+
+      // -----------------------------------------------------------
+      // 11. INICIALIZACIÓN
+      // -----------------------------------------------------------
+      switchView('client');
+      fetchFromFirebase(false);
+      startPolling();
+    })();
+  </script>
+</body>
+</html>
