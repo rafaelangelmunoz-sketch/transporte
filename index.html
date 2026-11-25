@@ -211,34 +211,71 @@
             <span id="client-whatsapp-display" class="text-xs font-semibold text-zafiro-muted">0414-655-3914</span>
           </div>
 
-          <input
-            id="input-destination"
-            type="text"
-            placeholder="Destino o punto de referencia (opcional)"
-            class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3.5 py-3 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
-          />
+          <!-- Campo DESDE (Origen) -->
+          <div class="space-y-1.5">
+            <div class="flex items-center justify-between">
+              <label for="input-origin" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted">
+                Desde (Origen)
+              </label>
+              <a
+                href="https://www.google.com/maps"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[11px] font-bold text-brasa hover:underline flex items-center gap-1"
+              >
+                Abrir Maps ↗
+              </a>
+            </div>
+            <input
+              id="input-origin"
+              type="text"
+              placeholder="Escribe dirección o pega enlace de Google Maps"
+              class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3.5 py-2.5 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
+            />
+            <div class="flex items-center gap-2">
+              <button
+                id="btn-client-gps"
+                type="button"
+                class="flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-zafiro-dark hover:bg-zafiro-card/70 border border-zafiro-card text-xs font-semibold text-zafiro-text transition-colors cursor-pointer"
+              >
+                <svg class="w-4 h-4 text-brasa shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                </svg>
+                <span id="client-gps-label">Mi ubicación actual (GPS)</span>
+              </button>
 
-          <!-- Botón opcional para adjuntar ubicación GPS del cliente -->
-          <div class="flex items-center gap-2">
-            <button
-              id="btn-client-gps"
-              type="button"
-              class="flex-1 flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-zafiro-dark hover:bg-zafiro-card/70 border border-zafiro-card text-xs font-semibold text-zafiro-text transition-colors cursor-pointer"
-            >
-              <svg class="w-4 h-4 text-zafiro-muted shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
-              </svg>
-              <span id="client-gps-label">Adjuntar mi ubicación GPS</span>
-            </button>
+              <button
+                id="btn-clear-gps"
+                type="button"
+                style="display: none;"
+                class="px-3 py-2 rounded-xl bg-zafiro-dark border border-estado-ocupado/50 text-xs font-bold text-estado-ocupado hover:bg-estado-ocupado/10 transition-colors cursor-pointer"
+              >
+                Quitar
+              </button>
+            </div>
+          </div>
 
-            <button
-              id="btn-clear-gps"
-              type="button"
-              style="display: none;"
-              class="px-3 py-2.5 rounded-xl bg-zafiro-dark border border-estado-ocupado/50 text-xs font-bold text-estado-ocupado hover:bg-estado-ocupado/10 transition-colors cursor-pointer"
-            >
-              Quitar
-            </button>
+          <!-- Campo HASTA (Destino) -->
+          <div class="space-y-1.5 pt-1">
+            <div class="flex items-center justify-between">
+              <label for="input-destination" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted">
+                Hasta (Destino)
+              </label>
+              <a
+                href="https://www.google.com/maps"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-[11px] font-bold text-brasa hover:underline flex items-center gap-1"
+              >
+                Abrir Maps ↗
+              </a>
+            </div>
+            <input
+              id="input-destination"
+              type="text"
+              placeholder="Escribe destino o pega enlace de Google Maps"
+              class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3.5 py-2.5 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
+            />
           </div>
 
           <!-- Aviso cuando el conductor está ocupado -->
@@ -555,7 +592,7 @@
           <button
             id="btn-detect-sector"
             type="button"
-            class="w-full py-3 px-4 rounded-xl bg-zafiro-dark hover:bg-zafiro-main active:scale-[0.99] text-zafiro-text font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
+            class="w-full py-3 px-4 rounded-xl bg-zafiro-dark hover:bg-zafiro-main active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed text-zafiro-text font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer"
           >
             <svg id="detect-gps-spinner" style="display: none;" class="w-4 h-4 animate-spin text-zafiro-text" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -567,6 +604,10 @@
             </svg>
             <span id="detect-gps-label">Detectar sector por GPS</span>
           </button>
+
+          <p id="driver-gps-auto-status" class="text-[11px] font-semibold text-perla-ink/75 text-center leading-snug">
+            GPS automático activo mientras estés Disponible (solo guarda el nombre del sector).
+          </p>
 
           <!-- Cuadrícula de 12 Sectores Rápidos -->
           <div id="sector-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -782,6 +823,7 @@
       const STORAGE_KEY = 'rm_transporte_v3';
       const FIREBASE_ENDPOINT = 'https://mi-transporte-56598-default-rtdb.firebaseio.com/conductor.json';
       const POLL_INTERVAL_MS = 10000;
+      const DRIVER_GPS_INTERVAL_MS = 180000; // Actualización automática cada 3 min solo si está Activo
 
       // 12 Sectores rápidos de Maracaibo
       const MARACAIBO_SECTORS = [
@@ -795,8 +837,8 @@
         'Vereda del Lago',
         'Circunvalación 2',
         'Sabaneta',
-        'Indio Mara',
-        'Curva de Molina'
+        'Tierra Negra',
+        'Fuerzas Armadas'
       ];
 
       const DEFAULT_STATE = {
@@ -826,6 +868,7 @@
       let clientGpsLink = null;
       let toastTimer = null;
       let pollTimer = null;
+      let driverGpsTimer = null;
 
       // -----------------------------------------------------------
       // 2. REFERENCIAS DEL DOM
@@ -855,6 +898,7 @@
       const clientLastUpdated = document.getElementById('client-last-updated');
 
       const clientWhatsappDisplay = document.getElementById('client-whatsapp-display');
+      const inputOrigin = document.getElementById('input-origin');
       const inputDestination = document.getElementById('input-destination');
       const btnClientGps = document.getElementById('btn-client-gps');
       const clientGpsLabel = document.getElementById('client-gps-label');
@@ -892,6 +936,7 @@
       const detectGpsSpinner = document.getElementById('detect-gps-spinner');
       const detectGpsIcon = document.getElementById('detect-gps-icon');
       const detectGpsLabel = document.getElementById('detect-gps-label');
+      const driverGpsAutoStatus = document.getElementById('driver-gps-auto-status');
 
       const btnToggleSettings = document.getElementById('btn-toggle-settings');
       const settingsChevron = document.getElementById('settings-chevron');
@@ -1284,6 +1329,10 @@
           toggleKnob.classList.remove('translate-x-0');
           adminStatusText.textContent = 'Disponible';
           adminStatusText.className = 'text-lg font-extrabold text-estado-activo mt-0.5';
+
+          // Habilitar GPS solo cuando está Activo
+          btnDetectSector.disabled = false;
+          driverGpsAutoStatus.textContent = 'GPS automático activo cada 3 min (solo guarda el nombre del sector).';
         } else {
           btnToggleAvailability.classList.remove('bg-estado-activo');
           btnToggleAvailability.classList.add('bg-estado-ocupado');
@@ -1291,6 +1340,10 @@
           toggleKnob.classList.add('translate-x-0');
           adminStatusText.textContent = 'Ocupado / Fuera de servicio';
           adminStatusText.className = 'text-lg font-extrabold text-estado-ocupado mt-0.5';
+
+          // Deshabilitar GPS cuando está Ocupado para privacidad y ahorro de batería
+          btnDetectSector.disabled = true;
+          driverGpsAutoStatus.textContent = 'GPS desactivado (activa tu disponibilidad para detectar sector).';
         }
 
         adminCurrentSectorBadge.textContent = appState.sector;
@@ -1436,13 +1489,13 @@
         const block = [
           `Pago Móvil - ${appState.driverName}`,
           `Banco: ${appState.pagoMovil.banco}`,
-          `Cédula: ${extractDigits(appState.pagoMovil.cedula)}`,
-          `Teléfono: ${extractDigits(appState.pagoMovil.telefono)}`
+          `Cédula: ${appState.pagoMovil.cedula}`,
+          `Teléfono: ${appState.pagoMovil.telefono}`
         ].join('\n');
         copyText(block, '¡Todos los datos copiados!');
       });
 
-      // Ubicación GPS opcional del pasajero
+      // Ubicación GPS opcional del pasajero (se anexa al Origen / Desde)
       btnClientGps.addEventListener('click', () => {
         if (!navigator.geolocation) {
           showToast('Tu navegador no soporta GPS');
@@ -1456,14 +1509,14 @@
             const lat = pos.coords.latitude.toFixed(6);
             const lng = pos.coords.longitude.toFixed(6);
             clientGpsLink = `https://maps.google.com/?q=${lat},${lng}`;
-            clientGpsLabel.textContent = 'Ubicación GPS adjunta ✓';
+            clientGpsLabel.textContent = 'Ubicación actual adjunta ✓';
             btnClientGps.classList.add('border-estado-activo/60', 'text-estado-activo');
             btnClearGps.style.display = 'inline-block';
             btnClientGps.disabled = false;
-            showToast('Ubicación lista para enviar');
+            showToast('Ubicación GPS anexada al origen');
           },
           () => {
-            clientGpsLabel.textContent = 'Adjuntar mi ubicación GPS';
+            clientGpsLabel.textContent = 'Mi ubicación actual (GPS)';
             btnClientGps.disabled = false;
             showToast('Activa el permiso de ubicación');
           },
@@ -1473,15 +1526,16 @@
 
       btnClearGps.addEventListener('click', () => {
         clientGpsLink = null;
-        clientGpsLabel.textContent = 'Adjuntar mi ubicación GPS';
+        clientGpsLabel.textContent = 'Mi ubicación actual (GPS)';
         btnClientGps.classList.remove('border-estado-activo/60', 'text-estado-activo');
         btnClearGps.style.display = 'none';
       });
 
-      // Botón principal de WhatsApp
+      // Botón principal de WhatsApp con Desde (Origen + GPS) y Hasta (Destino)
       btnWhatsappCta.addEventListener('click', () => {
         const phone = extractDigits(appState.whatsappNumber) || '584146553914';
-        const destination = inputDestination.value.trim();
+        const originText = inputOrigin.value.trim();
+        const destinationText = inputDestination.value.trim();
         const lines = [];
 
         if (appState.available) {
@@ -1490,11 +1544,17 @@
           lines.push(`Hola ${appState.driverName}, vi en tu app que estás en servicio ahora. ¿Cuándo tendrías disponibilidad para agendar un traslado?`);
         }
 
-        if (destination) {
-          lines.push(`• Destino / Referencia: ${destination}`);
+        if (originText && clientGpsLink) {
+          lines.push(`📍 Desde (Origen): ${originText}`);
+          lines.push(`🛰️ Mi ubicación actual: ${clientGpsLink}`);
+        } else if (clientGpsLink) {
+          lines.push(`📍 Desde (Mi ubicación actual): ${clientGpsLink}`);
+        } else if (originText) {
+          lines.push(`📍 Desde (Origen): ${originText}`);
         }
-        if (clientGpsLink) {
-          lines.push(`• Mi ubicación GPS: ${clientGpsLink}`);
+
+        if (destinationText) {
+          lines.push(`🏁 Hasta (Destino): ${destinationText}`);
         }
 
         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
@@ -1575,15 +1635,43 @@
       });
 
       // -----------------------------------------------------------
-      // 10. INTERACCIONES DEL PANEL ADMINISTRADOR
+      // 10. INTERACCIONES DEL PANEL ADMINISTRADOR + GPS SOLO ACTIVO
       // -----------------------------------------------------------
       btnForceSync.addEventListener('click', () => fetchFromFirebase(false));
+
+      function stopDriverGpsTracking() {
+        if (driverGpsTimer) {
+          clearInterval(driverGpsTimer);
+          driverGpsTimer = null;
+        }
+      }
+
+      function startDriverGpsTracking() {
+        stopDriverGpsTracking();
+        if (!appState.available) return;
+
+        // Detecta inmediatamente al activarse y luego refresca cada 3 minutos
+        detectDriverSectorByGps(false);
+        driverGpsTimer = setInterval(() => {
+          if (appState.available) {
+            detectDriverSectorByGps(true);
+          } else {
+            stopDriverGpsTracking();
+          }
+        }, DRIVER_GPS_INTERVAL_MS);
+      }
 
       btnToggleAvailability.addEventListener('click', async () => {
         appState.available = !appState.available;
         const synced = await saveToFirebase();
         const msg = appState.available ? 'Estado: DISPONIBLE' : 'Estado: OCUPADO';
         showToast(synced ? msg : `${msg} (local)`);
+
+        if (appState.available) {
+          startDriverGpsTracking();
+        } else {
+          stopDriverGpsTracking();
+        }
       });
 
       btnSetCustomSector.addEventListener('click', async () => {
@@ -1598,28 +1686,40 @@
         showToast(synced ? `Sector: ${val}` : `Sector guardado localmente: ${val}`);
       });
 
-      // Acordeón para sección de edición de datos
+      // Sección colapsable de configuración en el panel administrador
       btnToggleSettings.addEventListener('click', () => {
-        const isOpen = settingsBody.style.display === 'block';
-        settingsBody.style.display = isOpen ? 'none' : 'block';
-        btnToggleSettings.setAttribute('aria-expanded', String(!isOpen));
-        settingsChevron.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
+        const isHidden = settingsBody.style.display === 'none';
+        settingsBody.style.display = isHidden ? 'block' : 'none';
+        btnToggleSettings.setAttribute('aria-expanded', String(isHidden));
+        settingsChevron.classList.toggle('rotate-180', isHidden);
       });
 
-      // Detectar sector aproximado por GPS (solo guarda nombre de sector/barrio)
-      btnDetectSector.addEventListener('click', () => {
-        if (!navigator.geolocation) {
-          showToast('GPS no disponible');
+      // Detectar sector aproximado por GPS (solo guarda nombre de sector/barrio y solo si está Activo)
+      function detectDriverSectorByGps(silent = false) {
+        if (!appState.available) {
+          if (!silent) showToast('Activa tu disponibilidad para usar el GPS');
           return;
         }
 
-        detectGpsSpinner.style.display = 'inline-block';
-        detectGpsIcon.style.display = 'none';
-        detectGpsLabel.textContent = 'Detectando sector...';
-        btnDetectSector.disabled = true;
+        if (!navigator.geolocation) {
+          if (!silent) showToast('GPS no disponible');
+          return;
+        }
+
+        if (!silent) {
+          detectGpsSpinner.style.display = 'inline-block';
+          detectGpsIcon.style.display = 'none';
+          detectGpsLabel.textContent = 'Detectando sector...';
+          btnDetectSector.disabled = true;
+        }
 
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
+            // Verificación de seguridad: si el conductor se desactivó mientras respondía el GPS, abortar
+            if (!appState.available) {
+              resetGpsBtn();
+              return;
+            }
             try {
               const { latitude, longitude } = pos.coords;
               const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1`;
@@ -1641,26 +1741,28 @@
 
               appState.sector = sectorName;
               await saveToFirebase();
-              showToast(`Sector detectado: ${sectorName}`);
+              if (!silent) showToast(`Sector detectado: ${sectorName}`);
             } catch {
-              showToast('No se pudo detectar el sector');
+              if (!silent) showToast('No se pudo detectar el sector');
             } finally {
               resetGpsBtn();
             }
           },
           () => {
-            showToast('Permiso de ubicación denegado');
+            if (!silent) showToast('Permiso de ubicación denegado');
             resetGpsBtn();
           },
           { enableHighAccuracy: false, timeout: 10000 }
         );
-      });
+      }
+
+      btnDetectSector.addEventListener('click', () => detectDriverSectorByGps(false));
 
       function resetGpsBtn() {
         detectGpsSpinner.style.display = 'none';
         detectGpsIcon.style.display = 'inline-block';
         detectGpsLabel.textContent = 'Detectar sector por GPS';
-        btnDetectSector.disabled = false;
+        btnDetectSector.disabled = !appState.available;
       }
 
       // Guardar configuración editada
