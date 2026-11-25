@@ -204,18 +204,21 @@
           </div>
         </section>
 
-        <!-- Bloque de Solicitud por WhatsApp (Zafiro Profundo + 10% Naranja Brasa) -->
+        <!-- Bloque de Solicitud por WhatsApp con Buscador de Lugares (Zafiro Profundo + 10% Naranja Brasa) -->
         <section class="bg-zafiro-main border border-zafiro-card rounded-2xl p-4 space-y-3">
           <div class="flex items-center justify-between gap-2">
             <h2 class="text-sm font-extrabold text-zafiro-text tracking-tight">Solicitar Servicio</h2>
             <span id="client-whatsapp-display" class="text-xs font-semibold text-zafiro-muted">0414-655-3914</span>
           </div>
 
-          <!-- Campo DESDE (Origen) -->
-          <div class="space-y-1.5">
-            <div class="flex items-center justify-between">
-              <label for="input-origin" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted">
-                Desde (Origen)
+          <!-- Campo DESDE (Origen) con Buscador Integrado -->
+          <div class="space-y-1.5 relative">
+            <div class="flex items-center justify-between gap-2">
+              <label for="input-origin" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted flex items-center gap-1.5">
+                <span>Desde (Origen)</span>
+                <span id="origin-pin-badge" style="display: none;" class="normal-case tracking-normal px-1.5 py-0.5 rounded-md bg-estado-activo/15 text-estado-activo text-[10px] font-bold border border-estado-activo/30">
+                  Mapa ✓
+                </span>
               </label>
               <a
                 href="https://www.google.com/maps"
@@ -226,13 +229,33 @@
                 Abrir Maps ↗
               </a>
             </div>
-            <input
-              id="input-origin"
-              type="text"
-              placeholder="Escribe dirección o pega enlace de Google Maps"
-              class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3.5 py-2.5 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
-            />
-            <div class="flex items-center gap-2">
+
+            <div class="relative">
+              <input
+                id="input-origin"
+                type="text"
+                autocomplete="off"
+                placeholder="Buscar lugar (ej. Sambil, Bella Vista) o pegar link"
+                class="w-full bg-zafiro-dark border border-zafiro-card focus:border-brasa rounded-xl pl-3.5 pr-9 py-2.5 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
+              />
+              <svg id="origin-search-spinner" style="display: none;" class="w-4 h-4 animate-spin text-brasa absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <svg id="origin-search-icon" class="w-4 h-4 text-zafiro-muted/70 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path stroke-linecap="round" d="M20 20l-3.5-3.5"></path>
+              </svg>
+            </div>
+
+            <!-- Desplegable de sugerencias DESDE -->
+            <div
+              id="origin-suggestions"
+              style="display: none;"
+              class="absolute left-0 right-0 top-[68px] z-30 bg-perla-bg text-perla-ink border border-perla-box rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-perla-box"
+            ></div>
+
+            <div class="flex items-center gap-2 pt-0.5">
               <button
                 id="btn-client-gps"
                 type="button"
@@ -255,11 +278,14 @@
             </div>
           </div>
 
-          <!-- Campo HASTA (Destino) -->
-          <div class="space-y-1.5 pt-1">
-            <div class="flex items-center justify-between">
-              <label for="input-destination" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted">
-                Hasta (Destino)
+          <!-- Campo HASTA (Destino) con Buscador Integrado -->
+          <div class="space-y-1.5 pt-1 relative">
+            <div class="flex items-center justify-between gap-2">
+              <label for="input-destination" class="text-[11px] font-bold uppercase tracking-wider text-zafiro-muted flex items-center gap-1.5">
+                <span>Hasta (Destino)</span>
+                <span id="dest-pin-badge" style="display: none;" class="normal-case tracking-normal px-1.5 py-0.5 rounded-md bg-estado-activo/15 text-estado-activo text-[10px] font-bold border border-estado-activo/30">
+                  Mapa ✓
+                </span>
               </label>
               <a
                 href="https://www.google.com/maps"
@@ -270,12 +296,31 @@
                 Abrir Maps ↗
               </a>
             </div>
-            <input
-              id="input-destination"
-              type="text"
-              placeholder="Escribe destino o pega enlace de Google Maps"
-              class="w-full bg-zafiro-dark border border-zafiro-card focus:border-zafiro-muted rounded-xl px-3.5 py-2.5 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
-            />
+
+            <div class="relative">
+              <input
+                id="input-destination"
+                type="text"
+                autocomplete="off"
+                placeholder="Buscar destino (ej. Lago Mall, Aeropuerto) o pegar link"
+                class="w-full bg-zafiro-dark border border-zafiro-card focus:border-brasa rounded-xl pl-3.5 pr-9 py-2.5 text-sm text-zafiro-text placeholder-zafiro-muted/65 outline-none transition-colors"
+              />
+              <svg id="dest-search-spinner" style="display: none;" class="w-4 h-4 animate-spin text-brasa absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+              </svg>
+              <svg id="dest-search-icon" class="w-4 h-4 text-zafiro-muted/70 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path stroke-linecap="round" d="M20 20l-3.5-3.5"></path>
+              </svg>
+            </div>
+
+            <!-- Desplegable de sugerencias HASTA -->
+            <div
+              id="dest-suggestions"
+              style="display: none;"
+              class="absolute left-0 right-0 top-[72px] z-30 bg-perla-bg text-perla-ink border border-perla-box rounded-xl shadow-2xl overflow-hidden max-h-56 overflow-y-auto divide-y divide-perla-box"
+            ></div>
           </div>
 
           <!-- Aviso cuando el conductor está ocupado -->
@@ -824,6 +869,8 @@
       const FIREBASE_ENDPOINT = 'https://mi-transporte-56598-default-rtdb.firebaseio.com/conductor.json';
       const POLL_INTERVAL_MS = 10000;
       const DRIVER_GPS_INTERVAL_MS = 180000; // Actualización automática cada 3 min solo si está Activo
+      const MCBO_LAT = 10.6544;
+      const MCBO_LON = -71.6406;
 
       // 12 Sectores rápidos de Maracaibo
       const MARACAIBO_SECTORS = [
@@ -866,6 +913,8 @@
       let currentView = 'client';
       let pinBuffer = '';
       let clientGpsLink = null;
+      let selectedOriginPlace = null; // { name, mapsUrl }
+      let selectedDestPlace = null;   // { name, mapsUrl }
       let toastTimer = null;
       let pollTimer = null;
       let driverGpsTimer = null;
@@ -899,7 +948,17 @@
 
       const clientWhatsappDisplay = document.getElementById('client-whatsapp-display');
       const inputOrigin = document.getElementById('input-origin');
+      const originSuggestions = document.getElementById('origin-suggestions');
+      const originPinBadge = document.getElementById('origin-pin-badge');
+      const originSearchSpinner = document.getElementById('origin-search-spinner');
+      const originSearchIcon = document.getElementById('origin-search-icon');
+
       const inputDestination = document.getElementById('input-destination');
+      const destSuggestions = document.getElementById('dest-suggestions');
+      const destPinBadge = document.getElementById('dest-pin-badge');
+      const destSearchSpinner = document.getElementById('dest-search-spinner');
+      const destSearchIcon = document.getElementById('dest-search-icon');
+
       const btnClientGps = document.getElementById('btn-client-gps');
       const clientGpsLabel = document.getElementById('client-gps-label');
       const btnClearGps = document.getElementById('btn-clear-gps');
@@ -952,17 +1011,14 @@
 
       // -----------------------------------------------------------
       // 3. NAVEGACIÓN DIRECTA Y 100% SEGURA POR DOM
-      //    (Sin hashchange ni history.replaceState)
       // -----------------------------------------------------------
       function switchView(target) {
         currentView = target;
 
-        // Ocultar los tres contenedores de forma explícita
         viewClient.style.display = 'none';
         viewPin.style.display = 'none';
         viewAdmin.style.display = 'none';
 
-        // Mostrar inmediatamente la vista solicitada
         if (target === 'pin') {
           pinBuffer = '';
           updatePinDots();
@@ -1000,7 +1056,6 @@
             ...(incoming.otrosPagos || {})
           }
         };
-        // Protege el PIN actual (7563) frente a valores antiguos como 1234
         if (!merged.pin || String(merged.pin).trim() === '1234') {
           merged.pin = '7563';
         }
@@ -1036,7 +1091,6 @@
         }, 2300);
       }
 
-      // Copiado compatible con iframes y móviles mediante document.execCommand('copy')
       function copyText(value, message = '¡Copiado!') {
         try {
           const ta = document.createElement('textarea');
@@ -1106,7 +1160,193 @@
       }
 
       // -----------------------------------------------------------
-      // 5. FIREBASE REALTIME DATABASE REST API (GET cada 10s / PUT)
+      // 5. BUSCADOR DE LUGARES EN MARACAIBO (PHOTON + NOMINATIM)
+      // -----------------------------------------------------------
+      async function searchPlacesInMaracaibo(query, signal) {
+        // 1) Intento principal: Photon (Komoot) sesgado a Maracaibo
+        try {
+          const photonUrl = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${MCBO_LAT}&lon=${MCBO_LON}&limit=6`;
+          const res = await fetch(photonUrl, { signal });
+          if (res.ok) {
+            const data = await res.json();
+            const features = Array.isArray(data.features) ? data.features : [];
+            const mapped = features
+              .filter((f) => {
+                const cc = (f.properties?.countrycode || '').toUpperCase();
+                return !cc || cc === 'VE';
+              })
+              .map((f) => {
+                const p = f.properties || {};
+                const [lon, lat] = f.geometry?.coordinates || [0, 0];
+                const title = p.name || p.street || p.district || p.city || 'Ubicación';
+                const detailParts = [p.street, p.district, p.city || 'Maracaibo', p.state]
+                  .filter(Boolean)
+                  .filter((val, idx, arr) => val !== title && arr.indexOf(val) === idx);
+                return {
+                  title,
+                  subtitle: detailParts.slice(0, 3).join(', ') || 'Maracaibo, Zulia',
+                  lat: Number(lat).toFixed(6),
+                  lng: Number(lon).toFixed(6),
+                  mapsUrl: `https://maps.google.com/?q=${Number(lat).toFixed(6)},${Number(lon).toFixed(6)}`
+                };
+              });
+
+            if (mapped.length > 0) return mapped.slice(0, 5);
+          }
+        } catch (err) {
+          if (err.name === 'AbortError') throw err;
+        }
+
+        // 2) Respaldo: Nominatim enfocado en Venezuela / Maracaibo
+        const nomUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Maracaibo')}&countrycodes=ve&limit=5&addressdetails=1`;
+        const resNom = await fetch(nomUrl, {
+          signal,
+          headers: { 'Accept-Language': 'es' }
+        });
+        if (!resNom.ok) return [];
+        const items = await resNom.json();
+        return (Array.isArray(items) ? items : []).map((item) => {
+          const parts = String(item.display_name || '').split(',').map((s) => s.trim());
+          const title = parts[0] || query;
+          const subtitle = parts.slice(1, 4).join(', ') || 'Maracaibo, Zulia';
+          const lat = Number(item.lat).toFixed(6);
+          const lng = Number(item.lon).toFixed(6);
+          return {
+            title,
+            subtitle,
+            lat,
+            lng,
+            mapsUrl: `https://maps.google.com/?q=${lat},${lng}`
+          };
+        });
+      }
+
+      function setupPlaceAutocomplete({
+        inputEl,
+        listEl,
+        badgeEl,
+        spinnerEl,
+        iconEl,
+        onSelect,
+        onClearSelection
+      }) {
+        let debounceTimer = null;
+        let activeController = null;
+
+        function setLoading(isLoading) {
+          spinnerEl.style.display = isLoading ? 'block' : 'none';
+          iconEl.style.display = isLoading ? 'none' : 'block';
+        }
+
+        function hideList() {
+          listEl.style.display = 'none';
+          listEl.innerHTML = '';
+        }
+
+        inputEl.addEventListener('input', () => {
+          const val = inputEl.value.trim();
+
+          // Si el usuario modifica manualmente el texto, limpia la selección previa
+          onClearSelection();
+          badgeEl.style.display = 'none';
+
+          clearTimeout(debounceTimer);
+          if (activeController) {
+            activeController.abort();
+            activeController = null;
+          }
+
+          // No buscar si está muy corto o si el usuario pegó directamente un enlace
+          if (val.length < 3 || /^https?:\/\//i.test(val)) {
+            setLoading(false);
+            hideList();
+            return;
+          }
+
+          debounceTimer = setTimeout(async () => {
+            activeController = new AbortController();
+            setLoading(true);
+            try {
+              const results = await searchPlacesInMaracaibo(val, activeController.signal);
+              setLoading(false);
+
+              if (!results.length) {
+                listEl.innerHTML = `
+                  <div class="px-3.5 py-3 text-xs text-perla-ink/70 text-center">
+                    Sin resultados exactos. Puedes dejar escrito el nombre o usar <strong>Abrir Maps ↗</strong>.
+                  </div>
+                `;
+                listEl.style.display = 'block';
+                return;
+              }
+
+              listEl.innerHTML = '';
+              results.forEach((place) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'w-full text-left px-3.5 py-2.5 hover:bg-perla-box/80 active:bg-perla-box transition-colors flex items-start gap-2.5 cursor-pointer';
+                btn.innerHTML = `
+                  <svg class="w-4 h-4 text-brasa shrink-0 mt-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"/>
+                  </svg>
+                  <div class="min-w-0 flex-1">
+                    <p class="text-xs font-extrabold text-perla-ink truncate">${escapeHtml(place.title)}</p>
+                    <p class="text-[11px] text-perla-ink/70 truncate">${escapeHtml(place.subtitle)}</p>
+                  </div>
+                `;
+                btn.addEventListener('click', () => {
+                  const fullLabel = place.subtitle
+                    ? `${place.title} (${place.subtitle.split(',')[0].trim()})`
+                    : place.title;
+                  inputEl.value = fullLabel;
+                  onSelect({ name: fullLabel, mapsUrl: place.mapsUrl });
+                  badgeEl.style.display = 'inline-block';
+                  hideList();
+                  showToast('Ubicación seleccionada con mapa');
+                });
+                listEl.appendChild(btn);
+              });
+
+              listEl.style.display = 'block';
+            } catch (err) {
+              if (err.name !== 'AbortError') {
+                setLoading(false);
+                hideList();
+              }
+            }
+          }, 360);
+        });
+
+        // Cerrar sugerencias al tocar fuera
+        document.addEventListener('click', (e) => {
+          if (!inputEl.contains(e.target) && !listEl.contains(e.target)) {
+            hideList();
+          }
+        });
+      }
+
+      setupPlaceAutocomplete({
+        inputEl: inputOrigin,
+        listEl: originSuggestions,
+        badgeEl: originPinBadge,
+        spinnerEl: originSearchSpinner,
+        iconEl: originSearchIcon,
+        onSelect: (place) => { selectedOriginPlace = place; },
+        onClearSelection: () => { selectedOriginPlace = null; }
+      });
+
+      setupPlaceAutocomplete({
+        inputEl: inputDestination,
+        listEl: destSuggestions,
+        badgeEl: destPinBadge,
+        spinnerEl: destSearchSpinner,
+        iconEl: destSearchIcon,
+        onSelect: (place) => { selectedDestPlace = place; },
+        onClearSelection: () => { selectedDestPlace = null; }
+      });
+
+      // -----------------------------------------------------------
+      // 6. FIREBASE REALTIME DATABASE REST API (GET cada 10s / PUT)
       // -----------------------------------------------------------
       function setSyncStatus(mode, detail) {
         if (mode === 'ok') {
@@ -1202,7 +1442,7 @@
       }
 
       // -----------------------------------------------------------
-      // 6. RENDERIZADO DE VISTAS
+      // 7. RENDERIZADO DE VISTAS
       // -----------------------------------------------------------
       function renderClientView() {
         const initials = getInitials(appState.driverName);
@@ -1216,7 +1456,6 @@
         qrModalName.textContent = appState.driverName;
         clientWhatsappDisplay.textContent = formatVePhoneDisplay(appState.whatsappNumber);
 
-        // Vehículo y Placa (opcionales)
         const hasVehicle = Boolean((appState.vehicle || '').trim());
         const hasPlate = Boolean((appState.plate || '').trim());
         if (hasVehicle || hasPlate) {
@@ -1229,7 +1468,6 @@
           clientVehicleRow.style.display = 'none';
         }
 
-        // Banner de estado en vivo
         if (appState.available) {
           avatarStatusDot.className = 'absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-estado-activo border-2 border-zafiro-main';
           statusCard.className = 'bg-zafiro-main border border-estado-activo/45 rounded-2xl p-4 transition-all duration-300';
@@ -1256,12 +1494,10 @@
 
         clientLastUpdated.textContent = formatUpdatedTime(appState.updatedAt);
 
-        // Datos de Pago Móvil
         pmBancoDisplay.textContent = appState.pagoMovil.banco || 'Banesco (0134)';
         pmCedulaDisplay.textContent = appState.pagoMovil.cedula || 'V-15.465.909';
         pmTelefonoDisplay.textContent = appState.pagoMovil.telefono || '0414-655-3914';
 
-        // Pestañas Binance Pay y Efectivo / Zelle
         renderOtherPaymentTabs();
       }
 
@@ -1269,7 +1505,6 @@
         const binance = (appState.otrosPagos?.binance || '').trim();
         const zelle = (appState.otrosPagos?.zelle || '').trim();
 
-        // Panel Binance Pay
         panelBinance.innerHTML = '';
         if (binance) {
           const row = document.createElement('div');
@@ -1294,7 +1529,6 @@
           `;
         }
 
-        // Slot Zelle dentro de Efectivo / Zelle
         panelZelleSlot.innerHTML = '';
         if (zelle) {
           const row = document.createElement('div');
@@ -1330,7 +1564,6 @@
           adminStatusText.textContent = 'Disponible';
           adminStatusText.className = 'text-lg font-extrabold text-estado-activo mt-0.5';
 
-          // Habilitar GPS solo cuando está Activo
           btnDetectSector.disabled = false;
           driverGpsAutoStatus.textContent = 'GPS automático activo cada 3 min (solo guarda el nombre del sector).';
         } else {
@@ -1341,14 +1574,12 @@
           adminStatusText.textContent = 'Ocupado / Fuera de servicio';
           adminStatusText.className = 'text-lg font-extrabold text-estado-ocupado mt-0.5';
 
-          // Deshabilitar GPS cuando está Ocupado para privacidad y ahorro de batería
           btnDetectSector.disabled = true;
           driverGpsAutoStatus.textContent = 'GPS desactivado (activa tu disponibilidad para detectar sector).';
         }
 
         adminCurrentSectorBadge.textContent = appState.sector;
 
-        // Renderizar los 12 sectores rápidos
         sectorGrid.innerHTML = '';
         MARACAIBO_SECTORS.forEach((sec) => {
           const isSelected = appState.sector.toLowerCase() === sec.toLowerCase();
@@ -1382,7 +1613,7 @@
       }
 
       // -----------------------------------------------------------
-      // 7. TECLADO NUMÉRICO DE PIN (7563 POR DEFECTO)
+      // 8. TECLADO NUMÉRICO DE PIN (7563 POR DEFECTO)
       // -----------------------------------------------------------
       function updatePinDots() {
         pinDots.forEach((dot, idx) => {
@@ -1439,7 +1670,7 @@
       document.getElementById('btn-pin-submit').addEventListener('click', verifyPin);
 
       // -----------------------------------------------------------
-      // 8. EVENTOS DE NAVEGACIÓN ENTRE VISTAS
+      // 9. EVENTOS DE NAVEGACIÓN ENTRE VISTAS
       // -----------------------------------------------------------
       document.getElementById('btn-open-admin').addEventListener('click', () => switchView('pin'));
       document.getElementById('btn-pin-back-top').addEventListener('click', () => switchView('client'));
@@ -1448,7 +1679,7 @@
       document.getElementById('btn-admin-back-bottom').addEventListener('click', () => switchView('client'));
 
       // -----------------------------------------------------------
-      // 9. INTERACCIONES DE LA VISTA CLIENTE
+      // 10. INTERACCIONES DE LA VISTA CLIENTE
       // -----------------------------------------------------------
       const payTabButtons = document.querySelectorAll('.pay-tab');
       const payPanels = {
@@ -1471,7 +1702,6 @@
         });
       });
 
-      // Copiado limpio individual y en bloque para Pago Móvil
       document.getElementById('btn-copy-banco').addEventListener('click', () => {
         const code = extractBankCode(appState.pagoMovil.banco);
         copyText(code, `¡Banco copiado (${code})!`);
@@ -1495,7 +1725,7 @@
         copyText(block, '¡Todos los datos copiados!');
       });
 
-      // Ubicación GPS opcional del pasajero (se anexa al Origen / Desde)
+      // Ubicación GPS opcional del pasajero
       btnClientGps.addEventListener('click', () => {
         if (!navigator.geolocation) {
           showToast('Tu navegador no soporta GPS');
@@ -1531,7 +1761,7 @@
         btnClearGps.style.display = 'none';
       });
 
-      // Botón principal de WhatsApp con Desde (Origen + GPS) y Hasta (Destino)
+      // Botón principal de WhatsApp con lugares seleccionados + enlaces Google Maps
       btnWhatsappCta.addEventListener('click', () => {
         const phone = extractDigits(appState.whatsappNumber) || '584146553914';
         const originText = inputOrigin.value.trim();
@@ -1544,17 +1774,28 @@
           lines.push(`Hola ${appState.driverName}, vi en tu app que estás en servicio ahora. ¿Cuándo tendrías disponibilidad para agendar un traslado?`);
         }
 
-        if (originText && clientGpsLink) {
-          lines.push(`📍 Desde (Origen): ${originText}`);
+        // Bloque DESDE (Origen)
+        if (selectedOriginPlace) {
+          lines.push(`📍 Desde: ${selectedOriginPlace.name}`);
+          lines.push(`🗺️ Mapa origen: ${selectedOriginPlace.mapsUrl}`);
+          if (clientGpsLink) {
+            lines.push(`🛰️ Mi ubicación actual: ${clientGpsLink}`);
+          }
+        } else if (originText && clientGpsLink) {
+          lines.push(`📍 Desde: ${originText}`);
           lines.push(`🛰️ Mi ubicación actual: ${clientGpsLink}`);
         } else if (clientGpsLink) {
           lines.push(`📍 Desde (Mi ubicación actual): ${clientGpsLink}`);
         } else if (originText) {
-          lines.push(`📍 Desde (Origen): ${originText}`);
+          lines.push(`📍 Desde: ${originText}`);
         }
 
-        if (destinationText) {
-          lines.push(`🏁 Hasta (Destino): ${destinationText}`);
+        // Bloque HASTA (Destino)
+        if (selectedDestPlace) {
+          lines.push(`🏁 Hasta: ${selectedDestPlace.name}`);
+          lines.push(`🗺️ Mapa destino: ${selectedDestPlace.mapsUrl}`);
+        } else if (destinationText) {
+          lines.push(`🏁 Hasta: ${destinationText}`);
         }
 
         const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`;
@@ -1635,7 +1876,7 @@
       });
 
       // -----------------------------------------------------------
-      // 10. INTERACCIONES DEL PANEL ADMINISTRADOR + GPS SOLO ACTIVO
+      // 11. INTERACCIONES DEL PANEL ADMINISTRADOR + GPS SOLO ACTIVO
       // -----------------------------------------------------------
       btnForceSync.addEventListener('click', () => fetchFromFirebase(false));
 
@@ -1650,7 +1891,6 @@
         stopDriverGpsTracking();
         if (!appState.available) return;
 
-        // Detecta inmediatamente al activarse y luego refresca cada 3 minutos
         detectDriverSectorByGps(false);
         driverGpsTimer = setInterval(() => {
           if (appState.available) {
@@ -1686,7 +1926,6 @@
         showToast(synced ? `Sector: ${val}` : `Sector guardado localmente: ${val}`);
       });
 
-      // Sección colapsable de configuración en el panel administrador
       btnToggleSettings.addEventListener('click', () => {
         const isHidden = settingsBody.style.display === 'none';
         settingsBody.style.display = isHidden ? 'block' : 'none';
@@ -1694,7 +1933,6 @@
         settingsChevron.classList.toggle('rotate-180', isHidden);
       });
 
-      // Detectar sector aproximado por GPS (solo guarda nombre de sector/barrio y solo si está Activo)
       function detectDriverSectorByGps(silent = false) {
         if (!appState.available) {
           if (!silent) showToast('Activa tu disponibilidad para usar el GPS');
@@ -1715,7 +1953,6 @@
 
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
-            // Verificación de seguridad: si el conductor se desactivó mientras respondía el GPS, abortar
             if (!appState.available) {
               resetGpsBtn();
               return;
@@ -1765,7 +2002,6 @@
         btnDetectSector.disabled = !appState.available;
       }
 
-      // Guardar configuración editada
       settingsForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
@@ -1791,7 +2027,7 @@
       });
 
       // -----------------------------------------------------------
-      // 11. INICIALIZACIÓN
+      // 12. INICIALIZACIÓN
       // -----------------------------------------------------------
       switchView('client');
       fetchFromFirebase(false);
